@@ -1,3 +1,4 @@
+import { Button } from '@/components/ui/button'
 import { ViewType } from '@/types/view'
 import {
     BarChart3,
@@ -40,7 +41,7 @@ const SideMenuBar = ({
                 onClick()
                 handleNavClick(currentView)
             }}
-            className={`cursor-pointer flex w-full items-center gap-3 rounded-lg px-4 py-3 transition-all ${
+            className={`cursor-pointer flex w-full gap-3 rounded-lg px-4 py-3 transition-all ${
                 active
                     ? 'bg-purple-600 text-white'
                     : 'text-gray-300 hover:bg-gray-800'
@@ -75,12 +76,14 @@ const SideMenuBar = ({
                             </p>
                         </div>
                     </div>
-                    <button
+                    <Button
+                        variant={'ghost'}
+                        size={'icon'}
                         onClick={toggleSidebar}
-                        className="rounded-lg p-2 transition-colors hover:bg-gray-700 lg:hidden"
+                        className="rounded-lg p-2 transition-colors hover:bg-gray-700 lg:hidden "
                     >
                         <X className="size-5" />
-                    </button>
+                    </Button>
                 </div>
             </div>
 
