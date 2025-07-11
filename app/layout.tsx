@@ -2,6 +2,8 @@ import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import './globals.css'
 import Providers from '@/providers/Providers'
+import { Toaster } from '@/components/ui/sonner'
+import { MAX_TOAST_NOTIFICATION_COUNT } from '@/utils/constants'
 
 const geistSans = Geist({
     variable: '--font-geist-sans',
@@ -28,13 +30,19 @@ export default function RootLayout({
             <body
                 className={`${geistSans.variable} ${geistMono.variable} antialiased`}
             >
-                <div className="relative min-h-screen">
+                <div className="relative min-h-screen font-[family-name:var(--font-geist-sans)]">
                     <Providers
                         attribute="class"
                         defaultTheme="system"
                         enableSystem
                     >
                         {children}
+                        <Toaster
+                            expand
+                            visibleToasts={MAX_TOAST_NOTIFICATION_COUNT}
+                            closeButton
+                            richColors
+                        />
                     </Providers>
                 </div>
             </body>
