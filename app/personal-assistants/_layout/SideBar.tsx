@@ -1,3 +1,4 @@
+import Logo from '@/components/Logo'
 import { Button } from '@/components/ui/button'
 import { ViewType } from '@/types/view'
 import {
@@ -63,19 +64,7 @@ const SideMenuBar = ({
             {/* Header */}
             <div className="border-b border-gray-700 p-4">
                 <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="flex size-10 items-center justify-center rounded-lg bg-purple-600">
-                            <Bot className="size-5" />
-                        </div>
-                        <div>
-                            <h1 className="text-lg font-bold">
-                                Voice AI Platform
-                            </h1>
-                            <p className="text-xs text-gray-400">
-                                Multi-Agent Voice System
-                            </p>
-                        </div>
-                    </div>
+                    <Logo />
                     <Button
                         variant={'ghost'}
                         size={'icon'}

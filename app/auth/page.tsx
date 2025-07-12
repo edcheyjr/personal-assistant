@@ -3,6 +3,7 @@ import React from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ThemeMenu } from '@/components/ThemeMenu'
 import { BackgroundBeamsWithCollision } from '@/components/ui/background-beams'
+import Logo from '@/components/Logo'
 
 type Props = {}
 
@@ -10,7 +11,8 @@ const Login = (props: Props) => {
     return (
         <BackgroundBeamsWithCollision>
             <div className="min-h-screen size-full mx-auto">
-                <div className="w-full flex justify-end p-6">
+                <div className="w-full flex justify-between p-6">
+                    <Logo />
                     <ThemeMenu />
                 </div>
                 <div className="py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center h-[80vh]">

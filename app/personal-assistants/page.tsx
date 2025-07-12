@@ -19,7 +19,7 @@ export default function PersonalAssitants({ sessionData }: any) {
 
     const handleNavClick = (view: ViewType): void => {
         setCurrentView(view)
-        setSidebarOpen(false) // Close sidebar on mobile after navigation
+        setSidebarOpen(false)
     }
     return (
         <div className="relative flex min-h-screen size-full bg-gray-900 text-white">
