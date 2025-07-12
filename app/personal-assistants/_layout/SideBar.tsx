@@ -10,6 +10,7 @@ import {
     X,
 } from 'lucide-react'
 import React from 'react'
+import { cn } from '@/utils/cn'
 
 type Props = {
     sidebarOpen: boolean
@@ -37,47 +38,46 @@ const SideMenuBar = ({
         active,
         onClick,
     }) => (
-        <button
-            onClick={() => {
-                onClick()
-                handleNavClick(currentView)
-            }}
-            className={`cursor-pointer flex w-full gap-3 rounded-lg px-4 py-3 transition-all ${
+        <Button
+            variant={active ? 'default' : 'ghost'}
+            onClick={onClick}
+            className={cn(
+                'w-full justify-start gap-3 px-4 py-3 h-auto font-medium transition-all',
                 active
-                    ? 'bg-purple-600 text-white'
-                    : 'text-gray-300 hover:bg-gray-800'
-            }`}
+                    ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+            )}
         >
             <Icon size={18} />
-            <span className="font-medium">{label}</span>
-        </button>
+            <span>{label}</span>
+        </Button>
     )
 
     return (
         <div
-            className={`
-  fixed inset-y-0 left-0 z-30 flex w-64 flex-col bg-gray-800 transition-transform duration-300 ease-in-out lg:relative
-  ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-  lg:translate-x-0
-`}
+            className={cn(
+                'fixed inset-y-0 left-0 z-30 flex w-64 flex-col bg-card border-r border-border transition-transform duration-300 ease-in-out lg:relative',
+                sidebarOpen ? 'translate-x-0' : '-translate-x-full',
+                'lg:translate-x-0'
+            )}
         >
             {/* Header */}
-            <div className="border-b border-gray-700 p-4">
-                <div className="flex items-center justify-between">
+            <div className="border-b border-border p-3">
+                <div className="flex items-center justify-between w-full">
                     <Logo />
                     <Button
-                        variant={'ghost'}
-                        size={'icon'}
+                        variant="ghost"
+                        size="icon"
                         onClick={toggleSidebar}
-                        className="rounded-lg p-2 transition-colors hover:bg-gray-700 lg:hidden "
+                        className="h-8 w-8 lg:hidden"
                     >
-                        <X className="size-5" />
+                        <X className="h-4 w-4" />
                     </Button>
                 </div>
             </div>
 
             {/* Navigation */}
-            <div className="flex-1 space-y-2 p-4">
+            <nav className="flex-1 space-y-2 p-4">
                 <NavItem
                     icon={MessageSquare}
                     label="Customer Interface"
@@ -96,28 +96,36 @@ const SideMenuBar = ({
                     active={currentView === 'agent-configuration'}
                     onClick={() => handleNavClick('agent-configuration')}
                 />
-            </div>
+            </nav>
 
             {/* System Status */}
-            <div className="border-t border-gray-700 p-4">
+            <div className="border-t border-border p-3.5">
                 <div className="space-y-3 text-sm">
-                    <div className="flex justify-between">
-                        <span className="text-gray-400">Total Agents</span>
-                        <span className="font-medium">6</span>
+                    <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">
+                            Total Agents
+                        </span>
+                        <span className="font-medium text-foreground">6</span>
                     </div>
-                    <div className="flex justify-between">
-                        <span className="text-gray-400">Active Agents</span>
-                        <span className="font-medium">6</span>
+                    <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">
+                            Active Agents
+                        </span>
+                        <span className="font-medium text-foreground">6</span>
                     </div>
-                    <div className="flex justify-between">
-                        <span className="text-gray-400">Agent Groups</span>
-                        <span className="font-medium">2</span>
+                    <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">
+                            Agent Groups
+                        </span>
+                        <span className="font-medium text-foreground">2</span>
                     </div>
-                    <div className="flex justify-between">
-                        <span className="text-gray-400">System Status</span>
+                    <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">
+                            System Status
+                        </span>
                         <div className="flex items-center gap-2">
-                            <div className="size-2 rounded-full bg-green-500"></div>
-                            <span className="font-medium text-green-400">
+                            <div className="h-2 w-2 rounded-full bg-green-500 dark:bg-green-400"></div>
+                            <span className="font-medium text-green-600 dark:text-green-400">
                                 Operational
                             </span>
                         </div>
