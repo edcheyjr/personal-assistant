@@ -35,8 +35,13 @@ export default function LoginForm() {
             'remember-me': false,
         },
     })
+    const {
+        formState: { isValid },
+    } = form
 
     function onSubmit(values: z.infer<typeof loginSchema>) {
+        console.log('submmitijnf')
+
         setLoading(true)
         toast.promise(
             signIn('credentials', {
@@ -178,6 +183,7 @@ export default function LoginForm() {
                         <div className="w-full">
                             <FormControl>
                                 <Button
+                                    disabled={!isValid || loading}
                                     key="submit-button-0"
                                     id="submit-button-0"
                                     name=""

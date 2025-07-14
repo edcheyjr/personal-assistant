@@ -30,6 +30,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 }
 
                 try {
+                    console.log('apiRoute.login', apiRoutes.login)
                     const response = await fetch(apiRoutes.login, {
                         method: 'POST',
                         body: JSON.stringify(credentialDetails),
