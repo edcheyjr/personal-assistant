@@ -1,7 +1,7 @@
 import z from 'zod'
 
 export const loginSchema = z.object({
-    email: z.string(),
+    email: z.email(),
     password: z.string(),
     'remember-me': z.boolean().default(false).optional(),
 })

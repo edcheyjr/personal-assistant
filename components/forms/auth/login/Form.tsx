@@ -23,6 +23,7 @@ import { routes } from '@/lib/routes'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { Loader } from 'lucide-react'
+import { FormMessages } from '@/components/MessageInfo'
 
 export default function LoginForm() {
     const [loading, setLoading] = useState(false)
@@ -85,11 +86,9 @@ export default function LoginForm() {
                     <FormField
                         control={form.control}
                         name="email"
-                        render={({ field }) => (
+                        render={({ field, fieldState, formState }) => (
                             <FormItem className="col-span-12 col-start-auto flex self-end flex-col gap-2 space-y-0 items-start">
-                                <FormLabel className="flex shrink-0">
-                                    Email
-                                </FormLabel>
+                                <FormLabel htmlFor="email">Email</FormLabel>
 
                                 <div className="w-full">
                                     <FormControl>
@@ -113,11 +112,19 @@ export default function LoginForm() {
                     <FormField
                         control={form.control}
                         name="password"
-                        render={({ field }) => (
+                        render={({ field, fieldState, formState }) => (
                             <FormItem className="col-span-12 col-start-auto flex self-end flex-col gap-2 space-y-0 items-start">
-                                <FormLabel className="flex shrink-0">
-                                    Password
-                                </FormLabel>
+                                {fieldState.error ? (
+                                    <FormMessages
+                                        type="error"
+                                        className="mb-2"
+                                        messages={[fieldState.error.message]}
+                                    />
+                                ) : (
+                                    <FormLabel htmlFor="product_code">
+                                        Password
+                                    </FormLabel>
+                                )}
 
                                 <div className="w-full">
                                     <FormControl>
