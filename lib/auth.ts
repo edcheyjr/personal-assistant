@@ -1,9 +1,17 @@
-import NextAuth from 'next-auth'
+import NextAuth, { CredentialsSignin } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { apiRoutes } from './api.routes'
 import { loginSchema } from './validation/auth'
-import { AuthUser } from '@/types/user'
 
+class InvalidLoginError extends CredentialsSignin {
+    code = 'Invalid email or password'
+}
+class NotfoundError extends CredentialsSignin {
+    code = 'User not found'
+}
+class UnauthorizedError extends CredentialsSignin {
+    code = 'Unauthorized Access'
+}
 export const { handlers, signIn, signOut, auth } = NextAuth({
     providers: [
         CredentialsProvider({
@@ -42,20 +50,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                             cause: response.status,
                         })
                     } else if (response.status == 401) {
-                        throw new Error('unauthorized request', {
-                            cause: response.status,
-                        })
+                        throw new UnauthorizedError()
                     } else if (response.status == 403) {
-                        throw new Error(
-                            'forbidden, wrong password or email, please try again.',
-                            {
-                                cause: response.status,
-                            }
-                        )
+                        throw new InvalidLoginError()
                     } else if (response.status == 404) {
-                        throw new Error('not found', {
-                            cause: response.status,
-                        })
+                        throw new NotfoundError()
                     } else if (!response.ok) {
                         throw new Error('server error', {
                             cause: response.status,
