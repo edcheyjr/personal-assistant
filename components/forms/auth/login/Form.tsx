@@ -131,8 +131,7 @@ export default function LoginForm() {
                                         <div className="relative w-full">
                                             <PasswordInput
                                                 key="password-input-0"
-                                                placeholder="paassword"
-                                                type="password"
+                                                placeholder="password"
                                                 id="password-input-0"
                                                 className=" "
                                                 {...field}

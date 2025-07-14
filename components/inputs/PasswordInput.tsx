@@ -9,9 +9,9 @@ import { Input } from '@/components/ui/input'
 
 const PasswordInput = forwardRef<
     HTMLInputElement,
-    React.ComponentProps<typeof Input>
+    Omit<React.ComponentProps<typeof Input>, 'type'>
 >(({ className, ...props }, ref) => {
-    const [showPassword, setShowPassword] = useState(false)
+    const [showPassword, setShowPassword] = useState(true)
     const disabled =
         props.value === '' || props.value === undefined || props.disabled
 
@@ -28,13 +28,13 @@ const PasswordInput = forwardRef<
                 variant="ghost"
                 size="sm"
                 className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                onClick={() => setShowPassword((prev) => !prev)}
+                onClick={() => setShowPassword(!showPassword)}
                 disabled={disabled}
             >
                 {showPassword && !disabled ? (
-                    <Eye className="h-4 w-4" aria-hidden="true" />
+                    <Eye className="size-4" aria-hidden="true" />
                 ) : (
-                    <EyeOff className="h-4 w-4" aria-hidden="true" />
+                    <EyeOff className="size-4" aria-hidden="true" />
                 )}
                 <span className="sr-only">
                     {showPassword ? 'Hide password' : 'Show password'}
