@@ -1,3 +1,6 @@
+'use client'
+
+import { useThemeColor, generateThemeCSS } from '@/lib/theme'
 import React from 'react'
 
 interface LoaderProps {
@@ -46,6 +49,7 @@ const Loader = ({
     centered = true,
     height = '100%',
 }: LoaderProps) => {
+    const { themeColor } = useThemeColor()
     // Determine container classes
     const containerClasses = centered
         ? `grid place-content-center ${className}`.trim()
@@ -72,6 +76,7 @@ const Loader = ({
                 style={{
                     width: loaderSize,
                     height: loaderSize,
+                    ...generateThemeCSS(themeColor),
                 }}
             >
                 <svg
