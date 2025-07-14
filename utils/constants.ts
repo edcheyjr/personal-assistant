@@ -1,2 +1,3 @@
 const MAX_TOAST_NOTIFICATION_COUNT = 3 as const
-export { MAX_TOAST_NOTIFICATION_COUNT }
+const unknownErr = 'Oops🥲! there was a server error, try later' as const //unknown error message
+export { MAX_TOAST_NOTIFICATION_COUNT, unknownErr }

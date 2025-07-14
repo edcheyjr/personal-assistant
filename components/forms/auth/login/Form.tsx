@@ -21,19 +21,23 @@ import { toast } from 'sonner'
 import { signIn } from '@/lib/auth'
 import { routes } from '@/lib/routes'
 import { useRouter } from 'next/navigation'
+import { useState } from 'react'
+import { Loader } from 'lucide-react'
 
 export default function LoginForm() {
+    const [loading, setLoading] = useState(false)
     const router = useRouter()
     const form = useForm<z.infer<typeof loginSchema>>({
         resolver: zodResolver(loginSchema),
         defaultValues: {
             email: '',
-            password: '1234',
+            password: '',
             'remember-me': false,
         },
     })
 
     function onSubmit(values: z.infer<typeof loginSchema>) {
+        setLoading(true)
         toast.promise(
             signIn('credentials', {
                 ...values,
@@ -57,6 +61,7 @@ export default function LoginForm() {
                 },
             }
         )
+        setLoading(false)
     }
 
     function onReset() {
@@ -180,7 +185,11 @@ export default function LoginForm() {
                                     type="submit"
                                     variant="default"
                                 >
-                                    Login
+                                    {loading ? (
+                                        <Loader className="size-5" />
+                                    ) : (
+                                        'Login'
+                                    )}{' '}
                                 </Button>
                             </FormControl>
 

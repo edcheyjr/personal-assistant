@@ -2,6 +2,7 @@ import NextAuth from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { apiRoutes } from './api.routes'
 import { loginSchema } from './validation/auth'
+import { AuthUser } from '@/types/user'
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
     providers: [
@@ -68,17 +69,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                         throw new Error('user not found')
                     }
                 } catch (error: any) {
-                    // console.log("error", error)
-                    throw new Error(
-                        `${
-                            error.message && error.message != 'fetch failed'
-                                ? error.message
-                                : 'failed to connect check your network please.'
-                        } `,
-                        {
-                            cause: error,
-                        }
-                    )
+                    console.log('error', error)
+                    // throw new Error(
+                    //     `${
+                    //         error.message && error.message != 'fetch failed'
+                    //             ? error.message
+                    //             : 'failed to connect check your network please.'
+                    //     } `,
+                    //     {
+                    //         cause: error,
+                    //     }
+                    // )
+                    return null
                 }
             },
         }),

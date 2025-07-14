@@ -5,6 +5,7 @@ import {
     ThemeProviderProps,
 } from 'next-themes'
 import { ThemeProvider } from './theme-provider'
+import QueryProvider from './query-provider'
 
 type ProviderType = {
     children: React.ReactNode
@@ -19,5 +20,9 @@ export default function Providers({
     children,
     ...props
 }: ProviderType & ThemeProviderProps) {
-    return <ThemeProvider {...props}>{children}</ThemeProvider>
+    return (
+        <QueryProvider>
+            <ThemeProvider {...props}>{children}</ThemeProvider>
+        </QueryProvider>
+    )
 }
