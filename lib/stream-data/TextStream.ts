@@ -14,7 +14,7 @@ export interface AccessToken {
     access_token: string
 }
 
-export async function OpenAIStream<T>(
+export async function textStream<T>(
     url: string,
     payload: T,
     token?: AccessToken
@@ -37,7 +37,7 @@ export async function OpenAIStream<T>(
             timeout: 1000 * 60 * 5, // 5 mins to abort
         })
     } catch (error) {
-        logger(error, 'Network error in OpenAIStream')
+        logger(error, 'Network error in textStream')
         return 'Check your internet connection and try again.'
     }
 

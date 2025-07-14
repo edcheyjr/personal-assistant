@@ -1,13 +1,16 @@
 'use client'
 
+import { SessionProvider } from 'next-auth/react'
 import {
     ThemeProvider as NextThemesProvider,
     ThemeProviderProps,
 } from 'next-themes'
 import { ThemeProvider } from './theme-provider'
 import QueryProvider from './query-provider'
+import { Session } from 'next-auth'
 
 type ProviderType = {
+    session?: Session
     children: React.ReactNode
 }
 
@@ -18,11 +21,14 @@ type ProviderType = {
  */
 export default function Providers({
     children,
+    session,
     ...props
 }: ProviderType & ThemeProviderProps) {
     return (
-        <QueryProvider>
-            <ThemeProvider {...props}>{children}</ThemeProvider>
-        </QueryProvider>
+        <SessionProvider session={session}>
+            <QueryProvider>
+                <ThemeProvider {...props}>{children}</ThemeProvider>
+            </QueryProvider>
+        </SessionProvider>
     )
 }

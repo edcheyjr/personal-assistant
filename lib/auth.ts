@@ -2,6 +2,7 @@ import NextAuth, { CredentialsSignin } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { apiRoutes } from './api.routes'
 import { loginSchema } from './validation/auth'
+import { routes } from './routes'
 
 class InvalidLoginError extends CredentialsSignin {
     code = 'Invalid email or password'
@@ -41,6 +42,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 try {
                     console.log('apiRoute.login', apiRoutes.login)
                     const response = await fetch(apiRoutes.login, {
+                        headers: {
+                            Accept: 'application/json',
+                        },
                         method: 'POST',
                         body: JSON.stringify(credentialDetails),
                     })
@@ -104,8 +108,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     //   necessary in production
     debug: process.env.APP_ENV === 'development',
     pages: {
-        signIn: '/login',
-        signOut: '/login',
-        newUser: '/register',
+        signIn: routes.auth.login,
+        error: routes.auth.error,
+        signOut: '/auth/login',
+        // newUser: '/register',
     },
 })

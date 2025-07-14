@@ -69,9 +69,11 @@ export default function LoginForm() {
                 error: (response) => {
                     return 'Something went wrong. Check your credentials and try again or contact support if the problem persists.'
                 },
+                finally: () => {
+                    setLoading(false)
+                },
             }
         )
-        setLoading(false)
     }
 
     function onReset() {
