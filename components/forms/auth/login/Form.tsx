@@ -40,7 +40,11 @@ export default function LoginForm() {
         formState: { isValid },
     } = form
 
-    function onSubmit(values: z.infer<typeof loginSchema>) {
+    function onSubmit({
+        // TODO: add remember
+        'remember-me': remember,
+        ...values
+    }: z.infer<typeof loginSchema>) {
         console.log('submmitijnf')
 
         setLoading(true)

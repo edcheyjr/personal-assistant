@@ -17,6 +17,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 },
             },
             async authorize(credentials: any, req) {
+                console.log('credentials', credentials)
                 const validatedUserCredentials = loginSchema.safeParse({
                     email: credentials?.email,
                     password: credentials?.password,
