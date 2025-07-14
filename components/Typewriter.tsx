@@ -1,7 +1,13 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { animate, motion, useMotionValue, useTransform } from 'framer-motion'
+import {
+    animate,
+    motion,
+    useMotionValue,
+    useTransform,
+    Variants,
+} from 'framer-motion'
 
 export interface ITypewriterProps {
     delay: number
@@ -106,7 +112,7 @@ const cursorVariants = {
             times: [0, 0.5, 0.5, 1],
         },
     },
-}
+} satisfies Variants
 
 function BlinkingCursor() {
     return (
