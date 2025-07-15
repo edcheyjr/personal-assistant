@@ -1,4 +1,6 @@
 import { auth } from '@/lib/auth'
+import { ApiResponse } from '@/types/assistant'
+import { getAPIBaseURL } from '@/utils/baseUrl'
 import { CONTENT_TYPE, unknownErr } from '@/utils/constants'
 import { NextRequest, NextResponse } from 'next/server'
 
@@ -9,23 +11,18 @@ interface Agent {
     // Add other agent properties as needed
 }
 
-interface ApiResponse<T> {
-    data: T
-    success: boolean
-    message?: string
-}
-
-export async function GET(request: NextRequest) {
+export async function GET(req: NextRequest) {
     try {
         const session = await auth()
         // Extract query parameters
-        const { searchParams } = new URL(request.url)
-        const skip = parseInt(searchParams.get('skip') || '0', 10)
-        const limit = parseInt(searchParams.get('limit') || '100', 10)
 
         // Get authorization token from headers
         const token = session?.user.access_token
-
+        const search = (req.nextUrl.searchParams.get('q') as string) || ''
+        const limit =
+            parseInt(req.nextUrl.searchParams.get('limit') as string) || 100
+        const skip =
+            parseInt(req.nextUrl.searchParams.get('skip') as string) || 0
         // Validate parameters
         if (skip < 0 || limit <= 0 || limit > 1000) {
             return NextResponse.json(
@@ -47,10 +44,10 @@ export async function GET(request: NextRequest) {
         const headers: Record<string, string> = {
             'Content-Type': 'application/json',
         }
-
+        const baseUrl = getAPIBaseURL()
         // Make request to external API
         const response = await fetch(
-            `${process.env.API_BASE_URL}/api/v1/multi-agents/?${params}`,
+            `${baseUrl}/api/v1/multi-agents/?${params}`,
             {
                 method: 'GET',
                 headers: {
@@ -76,7 +73,7 @@ export async function GET(request: NextRequest) {
 
         const apiResponse: ApiResponse<Agent[]> = {
             data,
-            success: true,
+            status: 200,
         }
 
         return NextResponse.json(apiResponse)

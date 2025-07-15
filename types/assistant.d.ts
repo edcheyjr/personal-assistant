@@ -54,17 +54,6 @@ export interface UpdateAgentRequest {
     config?: AgentConfig
     voice_settings?: VoiceSettings
 }
-
-export interface LoginRequest {
-    username: string
-    password: string
-}
-
-export interface AuthResponse {
-    access_token: string
-    token_type: string
-}
-
 export interface StreamParams {
     user_input: string
     thread_id: string

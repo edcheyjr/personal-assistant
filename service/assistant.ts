@@ -5,23 +5,23 @@ import {
     Agent,
     CreateAgentRequest,
     UpdateAgentRequest,
-    LoginRequest,
-    AuthResponse,
     StreamParams,
     ApiResponse,
 } from '@/types/assistant'
-
-const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:8000'
+import { auth } from '@/lib/auth' // adjust the path to your actual auth helper
+import { getAPIBaseURL } from '@/utils/baseUrl'
 
 class AssistantService {
     private async makeRequest<T>(
         endpoint: string,
         options: RequestInit = {}
     ): Promise<ApiResponse<T>> {
+        const baseUrl = getAPIBaseURL()
         try {
-            const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+            const response = await fetch(`${baseUrl}${endpoint}`, {
                 headers: {
                     'Content-Type': 'application/json',
+
                     ...options.headers,
                 },
                 ...options,
@@ -54,16 +54,8 @@ class AssistantService {
         return token ? { Authorization: `Bearer ${token}` } : {}
     }
 
-    // Auth Methods
-    async login(credentials: LoginRequest): Promise<ApiResponse<AuthResponse>> {
-        return this.makeRequest<AuthResponse>('/api/v1/auth/login', {
-            method: 'POST',
-            body: JSON.stringify(credentials),
-        })
-    }
-
     async getCurrentUser(token: string): Promise<ApiResponse<string>> {
-        return this.makeRequest<string>('/api/v1/auth/me', {
+        return this.makeRequest<string>('/auth/me', {
             method: 'GET',
             headers: this.getAuthHeaders(token),
         })
@@ -71,7 +63,7 @@ class AssistantService {
 
     // UUID Methods
     async generateThreadId(): Promise<ApiResponse<string>> {
-        return this.makeRequest<string>('/api/v1/uuids/thread_id', {
+        return this.makeRequest<string>('/uuids/thread_id', {
             method: 'GET',
         })
     }
@@ -81,7 +73,7 @@ class AssistantService {
         agentData: CreateAgentRequest,
         token?: string
     ): Promise<ApiResponse<Agent>> {
-        return this.makeRequest<Agent>('/api/v1/multi-agents/', {
+        return this.makeRequest<Agent>('/multi-agents/', {
             method: 'POST',
             headers: this.getAuthHeaders(token),
             body: JSON.stringify(agentData),
@@ -98,7 +90,7 @@ class AssistantService {
     //         limit: limit.toString(),
     //     })
 
-    //     return this.makeRequest<Agent[]>(`/api/v1/multi-agents/?${params}`, {
+    //     return this.makeRequest<Agent[]>(`/multi-agents/?${params}`, {
     //         method: 'GET',
     //         headers: this.getAuthHeaders(token),
     //     })
@@ -108,7 +100,7 @@ class AssistantService {
         agentId: string,
         token?: string
     ): Promise<ApiResponse<Agent>> {
-        return this.makeRequest<Agent>(`/api/v1/multi-agents/${agentId}`, {
+        return this.makeRequest<Agent>(`/multi-agents/${agentId}`, {
             method: 'GET',
             headers: this.getAuthHeaders(token),
         })
@@ -119,7 +111,7 @@ class AssistantService {
         updateData: UpdateAgentRequest,
         token?: string
     ): Promise<ApiResponse<Agent>> {
-        return this.makeRequest<Agent>(`/api/v1/multi-agents/${agentId}`, {
+        return this.makeRequest<Agent>(`/multi-agents/${agentId}`, {
             method: 'PUT',
             headers: this.getAuthHeaders(token),
             body: JSON.stringify(updateData),
@@ -130,7 +122,7 @@ class AssistantService {
         agentId: string,
         token?: string
     ): Promise<ApiResponse<void>> {
-        return this.makeRequest<void>(`/api/v1/multi-agents/${agentId}`, {
+        return this.makeRequest<void>(`/multi-agents/${agentId}`, {
             method: 'DELETE',
             headers: this.getAuthHeaders(token),
         })
@@ -147,9 +139,9 @@ class AssistantService {
                 thread_id: params.thread_id,
                 agent_id: params.agent_id,
             })
-
+            const baseUrl = getAPIBaseURL()
             const response = await fetch(
-                `${API_BASE_URL}/api/v1/streaming/stream?${searchParams}`,
+                `${baseUrl}/streaming/stream?${searchParams}`,
                 {
                     method: 'GET',
                     headers: {
@@ -230,98 +222,41 @@ class AssistantService {
 export const assistantService = new AssistantService()
 
 // Server Actions
-export async function loginAction(credentials: LoginRequest) {
-    return assistantService.login(credentials)
-}
-
-export async function getCurrentUserAction(token: string) {
-    return assistantService.getCurrentUser(token)
-}
-
-export async function generateThreadIdAction() {
-    return assistantService.generateThreadId()
-}
-
-export async function createAgentAction(
-    agentData: CreateAgentRequest,
-    token?: string
-) {
+export async function createAgentAction(agentData: CreateAgentRequest) {
+    const session = await auth()
+    const token = session?.user?.token
     return assistantService.createAgent(agentData, token)
 }
 
-// export async function getAgentsAction(
-//     skip: number = 0,
-//     limit: number = 100,
-//     token?: string
-// ) {
-//     return assistantService.getAgents(skip, limit, token)
+// export async function getAgentAction(agentId: string) {
+//     const session = await auth()
+//     const token = session?.user?.token
+//     return assistantService.getAgent(agentId, token)
 // }
-
-export async function getAgentAction(agentId: string, token?: string) {
-    return assistantService.getAgent(agentId, token)
-}
 
 export async function updateAgentAction(
     agentId: string,
-    updateData: UpdateAgentRequest,
-    token?: string
+    updateData: UpdateAgentRequest
 ) {
+    const session = await auth()
+    const token = session?.user?.token
     return assistantService.updateAgent(agentId, updateData, token)
 }
 
-export async function deleteAgentAction(agentId: string, token?: string) {
+export async function deleteAgentAction(agentId: string) {
+    const session = await auth()
+    const token = session?.user?.token
     return assistantService.deleteAgent(agentId, token)
 }
 
-export async function streamAgentResponseAction(
-    params: StreamParams,
-    token?: string
-) {
+export async function streamAgentResponseAction(params: StreamParams) {
+    const session = await auth()
+    const token = session?.user?.token
     return assistantService.streamAgentResponse(params, token)
 }
 
-// Usage Examples:
-
-/*
-// Authentication
-const loginResult = await loginAction({
- username: "user@example.com",
- password: "password123"
-});
-
-if (loginResult.data) {
- const { access_token } = loginResult.data;
- 
- // Create an agent
- const createResult = await createAgentAction({
-   name: "Assistant Bot",
-   agent_type: "conversational",
-   description: "A helpful assistant",
-   personality_traits: { friendliness: 0.8, professionalism: 0.9 },
-   agent_properties: { language: "en" },
-   config: { max_tokens: 1000 },
-   voice_settings: { pitch: 0.5 },
-   user_id: "user@example.com"
- }, access_token);
-
- if (createResult.data) {
-   const agent = createResult.data;
-   
-   // Stream a response
-   const streamResult = await streamAgentResponseAction({
-     user_input: "Hello, how are you?",
-     thread_id: "thread-uuid",
-     agent_id: agent.id
-   }, access_token);
-
-   if (streamResult.data) {
-     await assistantService.parseSSEStream(
-       streamResult.data,
-       (data) => console.log('Received:', data),
-       (error) => console.error('Stream error:', error),
-       () => console.log('Stream complete')
-     );
-   }
- }
+export async function getCurrentUserAction() {
+    const session = await auth()
+    const token = session?.user?.token
+    return assistantService.getCurrentUser(token!)
 }
-*/
