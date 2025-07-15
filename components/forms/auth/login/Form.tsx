@@ -204,7 +204,7 @@ export default function LoginForm() {
                                     variant="default"
                                 >
                                     {loading ? (
-                                        <Loader className="size-5" />
+                                        <Loader className="size-5 animate-spin" />
                                     ) : (
                                         'Login'
                                     )}{' '}

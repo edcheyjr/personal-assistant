@@ -164,9 +164,9 @@ const SideMenuBar = ({
                         className="w-full mt-10 "
                     >
                         {loading ? (
-                            <LoaderIcon className="animate-spin" />
+                            <LoaderIcon className="animate-spin size-5 " />
                         ) : (
-                            <LogOut />
+                            <LogOut className="size-5" />
                         )}{' '}
                         Logout
                     </Button>
