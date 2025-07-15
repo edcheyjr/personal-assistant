@@ -84,4 +84,4 @@ function Button({
     )
 }
 
-export { Button, buttonVariants, useThemeColor }
+export { Button, buttonVariants }

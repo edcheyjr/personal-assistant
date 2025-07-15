@@ -1,3 +1,5 @@
+import { ColorKey } from '@/utils/constants'
+import { getStorageItem, setStorageItem } from '@/utils/localstorageAccess'
 import React from 'react'
 
 // Theme colors that would be stored in localStorage
@@ -17,8 +19,13 @@ export function useThemeColor() {
     const [themeColor, setThemeColor] = React.useState(colorOptions[0])
 
     React.useEffect(() => {
-        // localStorage?.setItem('themeColor', themeColor)
-    }, [themeColor])
+        const color = getStorageItem<string>(ColorKey)
+        if (color) {
+            setThemeColor(color)
+        } else {
+            setStorageItem<string>(ColorKey, colorOptions[0])
+        }
+    }, [])
 
     return { themeColor, setThemeColor }
 }

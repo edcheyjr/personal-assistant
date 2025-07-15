@@ -5,4 +5,16 @@ const CONTENT_TYPE = [
     'application/x-www-form-urlencoded',
 ] as const // used content types
 const unknownErr = 'Oops🥲! there was a server error, try later' as const //unknown error message
-export { MAX_TOAST_NOTIFICATION_COUNT, unknownErr, CONTENT_TYPE }
+/** color theme localstorage key */
+const ColorKey = 'theme-color' as const
+
+//--------------------------Caches Tags -------------------------------//
+const AGENTS_TAG = 'agents' as const
+//-------------------------- Caches Tags end --------------------------//
+export {
+    MAX_TOAST_NOTIFICATION_COUNT,
+    unknownErr,
+    CONTENT_TYPE,
+    AGENTS_TAG,
+    ColorKey,
+}
