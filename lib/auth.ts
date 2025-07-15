@@ -4,6 +4,7 @@ import { apiRoutes } from './api.routes'
 import { loginSchema } from './validation/auth'
 import { routes } from './routes'
 import { ErrorDetail } from '@/types/errors'
+import { CONTENT_TYPE } from '@/utils/constants'
 
 class InvalidLoginError extends CredentialsSignin {
     code = 'Invalid email or password'
@@ -38,7 +39,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                     return null
                 }
                 const credentialDetails = {
-                    email: validatedUserCredentials.data.email,
+                    username: validatedUserCredentials.data.email,
                     password: validatedUserCredentials.data.password,
                 }
                 console.log('credentialDetails', credentialDetails)
@@ -46,6 +47,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                     const response = await fetch(apiRoutes.login, {
                         headers: {
                             Accept: 'application/json',
+                            'Content-Type': CONTENT_TYPE[0],
                         },
                         method: 'POST',
                         body: JSON.stringify(credentialDetails),

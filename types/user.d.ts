@@ -16,4 +16,9 @@ declare module 'next-auth/jwt' {
 export interface AuthUser {
     access_token: string
     token_type: string
+    token_type: 'bearer'
+    id: string
+    iat: number
+    exp: number
+    jti: string
 }
