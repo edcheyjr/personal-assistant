@@ -1,4 +1,5 @@
 import { auth } from '@/lib/auth'
+import { CONTENT_TYPE, unknownErr } from '@/utils/constants'
 import { NextRequest, NextResponse } from 'next/server'
 
 // Define the Agent type (adjust based on your actual Agent interface)
@@ -47,27 +48,28 @@ export async function GET(request: NextRequest) {
             'Content-Type': 'application/json',
         }
 
-        if (token) {
-            headers['Authorization'] = `Bearer ${token}`
-        }
-
         // Make request to external API
         const response = await fetch(
             `${process.env.API_BASE_URL}/api/v1/multi-agents/?${params}`,
             {
                 method: 'GET',
-                headers,
+                headers: {
+                    accept: CONTENT_TYPE[0],
+                    'Content-Type': CONTENT_TYPE[0],
+                    Authorization: `Bearer ${token}`,
+                },
             }
         )
 
         if (!response.ok) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    message: `External API error: ${response.status}`,
-                },
-                { status: response.status }
-            )
+            const msg = await response.json().then((result) => result.detail)
+            process.env.NODE_ENV == 'development'
+                ? console.log('msg', msg)
+                : null
+            return NextResponse.json(msg || unknownErr, {
+                status: response.status,
+                statusText: msg,
+            })
         }
 
         const data: Agent[] = await response.json()

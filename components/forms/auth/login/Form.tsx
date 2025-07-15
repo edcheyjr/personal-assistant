@@ -17,13 +17,13 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Button } from '@/components/ui/button'
 import { PasswordInput } from '@/components/inputs'
 import { loginSchema } from '@/lib/validation/auth'
-import { toast } from 'sonner'
-import { signIn } from '@/lib/auth'
 import { routes } from '@/lib/routes'
+import { signIn, signOut, useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { Loader } from 'lucide-react'
 import { FormMessages } from '@/components/MessageInfo'
+import { toast } from 'sonner'
 
 export default function LoginForm() {
     const [loading, setLoading] = useState(false)
@@ -57,16 +57,13 @@ export default function LoginForm() {
             {
                 loading: 'Loading...',
                 success: (response) => {
-                    if (response?.error) {
-                        console.log('Error:', response)
-                        throw new Error(
-                            'Something went wrong. Check your credentials and try again or contact support if the problem persists.'
-                        )
-                    }
+                    console.log('response', response)
+
                     router.push(routes.personalAssistants)
                     return 'Login success, please wait...'
                 },
                 error: (response) => {
+                    console.log('response', response)
                     return 'Something went wrong. Check your credentials and try again or contact support if the problem persists.'
                 },
                 finally: () => {
