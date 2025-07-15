@@ -3,6 +3,7 @@ import CredentialsProvider from 'next-auth/providers/credentials'
 import { apiRoutes } from './api.routes'
 import { loginSchema } from './validation/auth'
 import { routes } from './routes'
+import { ErrorDetail } from '@/types/errors'
 
 class InvalidLoginError extends CredentialsSignin {
     code = 'Invalid email or password'
@@ -12,6 +13,9 @@ class NotfoundError extends CredentialsSignin {
 }
 class UnauthorizedError extends CredentialsSignin {
     code = 'Unauthorized Access'
+}
+class UnknownError extends CredentialsSignin {
+    code = 'Unknown Error'
 }
 export const { handlers, signIn, signOut, auth } = NextAuth({
     providers: [
@@ -26,7 +30,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 },
             },
             async authorize(credentials: any, req) {
-                console.log('credentials', credentials)
                 const validatedUserCredentials = loginSchema.safeParse({
                     email: credentials?.email,
                     password: credentials?.password,
@@ -38,9 +41,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                     email: validatedUserCredentials.data.email,
                     password: validatedUserCredentials.data.password,
                 }
-
+                console.log('credentialDetails', credentialDetails)
                 try {
-                    console.log('apiRoute.login', apiRoutes.login)
                     const response = await fetch(apiRoutes.login, {
                         headers: {
                             Accept: 'application/json',
@@ -60,10 +62,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                     } else if (response.status == 404) {
                         throw new NotfoundError()
                     } else if (!response.ok) {
-                        throw new Error('server error', {
-                            cause: response.status,
-                        })
-                    } else {
+                        const responseData =
+                            (await response.json()) as ErrorDetail[]
+                        console.error('Error Details', responseData)
+                        throw new UnknownError(response.statusText)
                     }
 
                     const user = await response.json()

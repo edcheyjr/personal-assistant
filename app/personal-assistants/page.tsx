@@ -25,12 +25,6 @@ export default function PersonalAssitants({ sessionData }: any) {
     return (
         <div className="relative flex min-h-screen size-full ">
             {/* Sidebar Overlay for Mobile */}
-            {sidebarOpen && (
-                <div
-                    className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden"
-                    onClick={toggleSidebar}
-                />
-            )}
 
             {/* Sidebar */}
             <SideMenuBar

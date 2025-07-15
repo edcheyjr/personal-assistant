@@ -51,15 +51,18 @@ export default function LoginForm() {
         toast.promise(
             signIn('credentials', {
                 ...values,
-                redirectTo: routes.personalAssistants,
                 redirect: false,
             }),
             {
                 loading: 'Loading...',
                 success: (response) => {
-                    console.log('response', response)
+                    if (response.error) {
+                        throw Error(
+                            'Something went wrong. Check your credentials and try again or contact support if the problem persists.'
+                        )
+                    }
 
-                    router.push(routes.personalAssistants)
+                    router.push('/')
                     return 'Login success, please wait...'
                 },
                 error: (response) => {

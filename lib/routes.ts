@@ -1,6 +1,6 @@
 export const routes = {
     auth: {
-        login: '/auth/login',
+        login: '/auth',
         register: '/auth/register',
         resetpassword: '/auth/reset-password',
         error: '/auth/error',
