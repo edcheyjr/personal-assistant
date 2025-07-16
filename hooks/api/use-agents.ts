@@ -1,4 +1,4 @@
-import { Agent } from '@/types/agent'
+import { Agent, ApiResponse } from '@/types/agent'
 import { AGENTS_TAG } from '@/utils/constants'
 import { useQuery } from '@tanstack/react-query'
 
@@ -13,7 +13,7 @@ interface UseAgentsParams {
 export function useAgents(params: UseAgentsParams = {}) {
     const { skip = 0, limit = 100 } = params
 
-    return useQuery<Agent[]>({
+    return useQuery<ApiResponse<Agent[]>>({
         queryKey: [AGENTS_TAG, skip, limit],
         queryFn: async () => {
             const searchParams = new URLSearchParams({
@@ -22,11 +22,15 @@ export function useAgents(params: UseAgentsParams = {}) {
             })
 
             const response = await fetch(`/api/agents/get?${searchParams}`)
-            const data = (await response.json()) as Agent[]
-            if (Array.isArray(data)) {
-                return data
+            const data = (await response.json()) as ApiResponse<Agent[]>
+            if (typeof data != 'object') {
+                throw {
+                    data: [],
+                    status: 400,
+                    message: 'Not Found',
+                }
             }
-            return []
+            return data
         },
     })
 }

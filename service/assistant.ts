@@ -81,21 +81,21 @@ class AssistantService {
         })
     }
 
-    // async getAgents(
-    //     skip: number = 0,
-    //     limit: number = 100,
-    //     token?: string
-    // ): Promise<ApiResponse<Agent[]>> {
-    //     const params = new URLSearchParams({
-    //         skip: skip.toString(),
-    //         limit: limit.toString(),
-    //     })
+    async getAgents(
+        skip: number = 0,
+        limit: number = 100,
+        token?: string
+    ): Promise<ApiResponse<Agent[]>> {
+        const params = new URLSearchParams({
+            skip: skip.toString(),
+            limit: limit.toString(),
+        })
 
-    //     return this.makeRequest<Agent[]>(`/multi-agents/?${params}`, {
-    //         method: 'GET',
-    //         headers: this.getAuthHeaders(token),
-    //     })
-    // }
+        return this.makeRequest<Agent[]>(`/multi-agents/?${params}`, {
+            method: 'GET',
+            headers: this.getAuthHeaders(token),
+        })
+    }
 
     async getAgent(
         agentId: string,

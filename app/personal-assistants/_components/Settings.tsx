@@ -44,6 +44,7 @@ import { cn } from '@/utils/cn'
 import { Label } from '@radix-ui/react-label'
 import { FormMessages } from '@/components/MessageInfo'
 import { useAgents } from '@/hooks/api/use-agents'
+import Loader from '@/components/Loader'
 
 // Temporary mock implementation of useAgents hook
 const useMockAgents = (params: { skip?: number; limit?: number } = {}) => {
@@ -292,7 +293,6 @@ const AgentSelector: React.FC<{
     onCreateNew: () => void
     selectedColor: string
 }> = ({ agents, selectedAgent, selectedColor, onSelectAgent, onCreateNew }) => {
-    console.log('agents', agents)
     const [isOpen, setIsOpen] = useState(false)
     const [searchTerm, setSearchTerm] = useState('')
 
@@ -402,8 +402,9 @@ const AgentSelector: React.FC<{
 
 const AgentsSettings: React.FC = () => {
     // Fetch agents using the provided hook
-    const { data: agents = [], isLoading, error } = useAgents()
+    const { data, isLoading, error } = useAgents()
 
+    const agents = data?.data || []
     const selectCommunicationTone = communicationTones.map((tone) => ({
         value: tone,
         label: tone,
@@ -467,7 +468,7 @@ const AgentsSettings: React.FC = () => {
 
     // Set first agent as selected when data loads and populate form
     React.useEffect(() => {
-        if (agents.length > 0 && !selectedAgent) {
+        if (agents && agents.length > 0 && !selectedAgent) {
             const firstAgent = agents[0]
             setSelectedAgent(firstAgent)
             setBasicInfo({
@@ -596,7 +597,7 @@ const AgentsSettings: React.FC = () => {
                             <Bot className="w-10 h-10 text-muted-foreground animate-pulse" />
                         </div>
                         <h2 className="text-xl font-bold mb-2">
-                            Loading Agents...
+                            <Loader size={'4rem'} /> Loading Agents...
                         </h2>
                         <p className="text-muted-foreground">
                             Please wait while we fetch your agents
@@ -607,7 +608,7 @@ const AgentsSettings: React.FC = () => {
         )
     }
 
-    if (error) {
+    if (error || data?.error) {
         return (
             <div className="size-full bg-background text-foreground p-6">
                 <div className="max-w-4xl mx-auto">
