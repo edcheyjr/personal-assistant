@@ -23,6 +23,8 @@ import { logger } from '@/utils/logger'
 import { Loader2 } from 'lucide-react'
 import { AgentTypeSelection } from './Settings'
 import Select from '@/components/inputs/select-input'
+import { useSession } from 'next-auth/react'
+import { CreateAgentRequest } from '@/types/agent'
 
 type Props = {
     isOpen: boolean
@@ -31,10 +33,14 @@ type Props = {
 }
 
 export default function CreateForm({ isOpen, onOpenChange, onClose }: Props) {
+    const { data: session } = useSession()
+    const user_id = session?.user.id
     const queryClient = useQueryClient()
+
     const formSchema = z.object({
-        name: z.string(),
-        description: z.string(),
+        name: z.string().min(1, 'Name is required'),
+        agent_type: z.string().min(1, 'Agent type is required'),
+        description: z.string().min(1, 'Description is required'),
     })
 
     const mutation = useMutation({
@@ -44,7 +50,7 @@ export default function CreateForm({ isOpen, onOpenChange, onClose }: Props) {
                 queryKey: [AGENTS_TAG],
             })
             if (response.status == 200) {
-                toast.success('Successfully updated role')
+                toast.success('Successfully created agent')
             }
             onClose()
         },
@@ -53,7 +59,7 @@ export default function CreateForm({ isOpen, onOpenChange, onClose }: Props) {
             toast.error(
                 error.response?.message ??
                     error.message ??
-                    'Failed to update role'
+                    'Failed to create agent'
             )
         },
         onSettled: async (data, error, variables, context) => {
@@ -65,6 +71,7 @@ export default function CreateForm({ isOpen, onOpenChange, onClose }: Props) {
         resolver: zodResolver(formSchema),
         defaultValues: {
             name: '',
+            agent_type: '',
             description: '',
         },
     })
@@ -72,8 +79,31 @@ export default function CreateForm({ isOpen, onOpenChange, onClose }: Props) {
     const {
         formState: { isDirty, isLoading, isValid },
     } = form
+
     function onSubmit(values: z.infer<typeof formSchema>) {
-        console.log(values)
+        if (!user_id) {
+            toast.error('User not authenticated')
+            return
+        }
+
+        const createAgentData = {
+            user_id,
+            name: values.name,
+            agent_type: values.agent_type,
+            description: values.description,
+            personality_traits: {
+                formal: 0.5,
+                friendly: 0.5,
+                professional: 0.5,
+                conversational: 0.5,
+                humorous: 0.5,
+                serious: 0.5,
+                direct: 0.5,
+                verbose: 0.5,
+            },
+        } as CreateAgentRequest
+
+        mutation.mutate(createAgentData)
     }
 
     function onReset() {
@@ -87,20 +117,20 @@ export default function CreateForm({ isOpen, onOpenChange, onClose }: Props) {
             onOpenChange={onOpenChange}
             contentClassName="max-w-lg 2xl:max-w-3xl 2xl:p-10"
             title="Create New Agent"
-            dialogAriaDesc="switch plan dialog. has three tabs. Intro, add billing and confirm"
+            dialogAriaDesc="Create new agent dialog with form fields for name, type, and description"
             footer={
                 <>
                     <Button
                         variant="secondary"
                         onClick={onClose}
                         className="w-full"
-                        // disabled={currentStep === 'intro'}
+                        disabled={mutation.isPending}
                     >
                         Cancel
                     </Button>
                     <Button
-                        disabled={!isValid}
-                        // onClick={handleSubmit}
+                        disabled={!isValid || mutation.isPending}
+                        onClick={form.handleSubmit(onSubmit)}
                         className="w-full max-sm:mb-2"
                     >
                         {mutation.isPending ? (
@@ -128,7 +158,7 @@ export default function CreateForm({ isOpen, onOpenChange, onClose }: Props) {
                             render={({ field }) => (
                                 <FormItem className="col-span-12 col-start-auto flex self-end flex-col gap-2 space-y-0 items-start">
                                     <FormLabel className="flex shrink-0">
-                                        Title
+                                        Name
                                     </FormLabel>
 
                                     <div className="w-full">
@@ -136,7 +166,7 @@ export default function CreateForm({ isOpen, onOpenChange, onClose }: Props) {
                                             <div className="relative w-full">
                                                 <Input
                                                     key="name"
-                                                    placeholder=""
+                                                    placeholder="Enter agent name"
                                                     type="text"
                                                     id="name"
                                                     className=" "
@@ -152,22 +182,27 @@ export default function CreateForm({ isOpen, onOpenChange, onClose }: Props) {
                         />
                         <FormField
                             control={form.control}
-                            name="name"
+                            name="agent_type"
                             render={({ field }) => (
                                 <FormItem className="col-span-12 col-start-auto flex self-end flex-col gap-2 space-y-0 items-start">
                                     <FormLabel className="block text-sm font-medium mb-2">
-                                        Agent Types
+                                        Agent Type
                                     </FormLabel>
-                                    <Select
-                                        value={field.value}
-                                        onValueChange={field.onChange}
-                                        width="w-full"
-                                        defaultLabel="Communication Tone"
-                                        required
-                                        className="-mt-0.5"
-                                        aria-label="Select Connection Tone"
-                                        selectItems={AgentTypeSelection}
-                                    />
+                                    <div className="w-full">
+                                        <FormControl>
+                                            <Select
+                                                value={field.value}
+                                                onValueChange={field.onChange}
+                                                width="w-full"
+                                                defaultLabel="Select Agent Type"
+                                                required
+                                                className="-mt-0.5"
+                                                aria-label="Select Agent Type"
+                                                selectItems={AgentTypeSelection}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </div>
                                 </FormItem>
                             )}
                         />
@@ -185,7 +220,7 @@ export default function CreateForm({ isOpen, onOpenChange, onClose }: Props) {
                                             <Textarea
                                                 key="description"
                                                 id="description"
-                                                placeholder=""
+                                                placeholder="Describe your agent's purpose and capabilities"
                                                 className=""
                                                 {...field}
                                             />
