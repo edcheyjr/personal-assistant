@@ -10,6 +10,7 @@ import {
 } from '@/types/agent'
 import { auth } from '@/lib/auth' // adjust the path to your actual auth helper
 import { getAPIBaseURL } from '@/utils/baseUrl'
+import { fetchWithTimeout } from '@/utils/fetchWithTimeout'
 
 class AssistantService {
     private async makeRequest<T>(
@@ -18,13 +19,14 @@ class AssistantService {
     ): Promise<ApiResponse<T>> {
         const baseUrl = getAPIBaseURL()
         try {
-            const response = await fetch(`${baseUrl}${endpoint}`, {
+            const response = await fetchWithTimeout(`${baseUrl}${endpoint}`, {
                 headers: {
                     'Content-Type': 'application/json',
 
                     ...options.headers,
                 },
                 ...options,
+                timeout: 1000 * 60, //1 min
             })
 
             if (!response.ok) {
