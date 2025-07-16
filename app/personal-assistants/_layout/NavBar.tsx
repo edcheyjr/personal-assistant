@@ -30,7 +30,12 @@ const NavBar = ({ toggleSidebar }: Props) => {
                 <div className="p-2 rounded bg-black/10">
                     <Headphones className="size-5" />
                 </div>{' '}
-                <span className="font-medium">AI Voice Assistant</span>
+                <span
+                    className="font-medium text-white text-shadow-2xs text-shadow-black"
+                    // className={`font-medium text-white text-shadow-2xs text-shadow-[${themeColor}]`}
+                >
+                    AI Voice Assistant
+                </span>
                 {/* 
                 <span className="text-sm text-purple-200 font-semibold bg-black/5 px-2 py-1 rounded">
                     • Ready
