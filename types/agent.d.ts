@@ -11,6 +11,14 @@ export type CommunicationTone =
     | 'Inspiring and encouraging'
     | 'Professional and precise'
 
+export type AgentType =
+    | 'personal_assistant'
+    | 'support_assistant'
+    | 'creative_assistant'
+    | 'sales_assistant'
+    | 'technical_assistant'
+    | 'marketing_assistant'
+
 //interfaces
 export interface ValidationError {
     detail: Array<{
@@ -65,7 +73,7 @@ export interface VoiceSettings {
 export interface Agent {
     id: string
     name: string
-    agent_type: string
+    agent_type: AgentType
     description: string
     personality_traits: PersonalityTraits
     agent_properties: AgentProperties
@@ -76,7 +84,7 @@ export interface Agent {
 
 export interface CreateAgentRequest {
     name: string
-    agent_type: string
+    agent_type: AgentType
     description: string
     personality_traits: PersonalityTraits
     agent_properties: AgentProperties
@@ -109,14 +117,6 @@ export interface ApiResponse<T> {
 export interface ThreadId {
     thread_id: string
 }
-
-// Additional utility types
-export type AgentType =
-    | 'support_assistant'
-    | 'creative_assistant'
-    | 'technical_assistant'
-    | string
-
 export interface AgentSummary {
     id: string
     name: string

@@ -28,6 +28,7 @@ import type {
     PersonalityTraits,
     UpdateAgentRequest,
     CommunicationTone,
+    AgentType,
 } from '@/types/agent'
 
 import { Textarea } from '@/components/ui/textarea'
@@ -35,6 +36,7 @@ import { cn } from '@/utils/cn'
 import { Label } from '@radix-ui/react-label'
 import { useAgents } from '@/hooks/api/use-agents'
 import Loader from '@/components/Loader'
+import { Input } from '@/components/ui/input'
 
 //FIXME: Temporary mock implementation of useAgents hook
 const useMockAgents = (params: { skip?: number; limit?: number } = {}) => {
@@ -42,7 +44,7 @@ const useMockAgents = (params: { skip?: number; limit?: number } = {}) => {
         {
             id: '1',
             name: 'Personal Assistant',
-            agent_type: 'personal',
+            agent_type: 'support_assistant',
             description: 'General purpose assistant for daily tasks',
             personality_traits: {
                 formal: 0.8,
@@ -83,7 +85,7 @@ const useMockAgents = (params: { skip?: number; limit?: number } = {}) => {
         {
             id: '2',
             name: 'Technical Support',
-            agent_type: 'technical',
+            agent_type: 'technical_assistant',
             description: 'Specialized in technical troubleshooting',
             personality_traits: {
                 formal: 0.9,
@@ -124,7 +126,7 @@ const useMockAgents = (params: { skip?: number; limit?: number } = {}) => {
         {
             id: '3',
             name: 'Creative Writer',
-            agent_type: 'creative',
+            agent_type: 'creative_assistant',
             description: 'Helps with creative writing and content',
             personality_traits: {
                 formal: 0.3,
@@ -388,6 +390,33 @@ const AgentSelector: React.FC<{
     )
 }
 
+export const AgentTypeSelection: { value: AgentType; label: string }[] = [
+    {
+        value: 'personal_assistant',
+        label: 'Personal Assistant',
+    },
+    {
+        value: 'support_assistant',
+        label: 'Support Team',
+    },
+    {
+        value: 'creative_assistant',
+        label: 'Creative Collective',
+    },
+    {
+        value: 'sales_assistant',
+        label: 'Sales Team',
+    },
+    {
+        value: 'technical_assistant',
+        label: 'Technical Support',
+    },
+    {
+        value: 'marketing_assistant',
+        label: 'Marketing Squad',
+    },
+]
+
 const AgentsSettings: React.FC = () => {
     const { data, isLoading, error } = useAgents()
 
@@ -423,6 +452,7 @@ const AgentsSettings: React.FC = () => {
         })
     const [communicationTone, setCommunicationTone] =
         useState<CommunicationTone>('Professional')
+    const [agentType, setAgentType] = useState<AgentType>('support_assistant')
     const [testInput, setTestInput] = useState<string>('')
 
     const colorOptions: string[] = [
@@ -740,12 +770,13 @@ const AgentsSettings: React.FC = () => {
                                     <h3 className="font-medium mb-6">
                                         Basic Information
                                     </h3>
-                                    <div className="grid min-[2048px]:grid-cols-2 gap-2">
-                                        <div className="w-full mb-4  min-[2048px]:mb-0 flex-1 space-y-4">
+                                    <div className="grid xl:grid-cols-2 gap-2 mb-4">
+                                        <div className="w-full mb-4 lg:mb-0 space-y-6">
                                             <Label className="block text-sm font-medium mb-2">
                                                 Title
                                             </Label>
-                                            <Textarea
+                                            <Input
+                                                type="text"
                                                 value={basicInfo.title}
                                                 onChange={({ target }) =>
                                                     setBasicInfo((prev) => ({
@@ -754,37 +785,49 @@ const AgentsSettings: React.FC = () => {
                                                     }))
                                                 }
                                                 placeholder="Type your message..."
-                                                className={cn(
-                                                    'min-h-[52px] max-h-[120px] resize-none transition-all duration-200',
-                                                    'focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:border-purple-500',
-                                                    'text-sm sm:text-base'
-                                                )}
-                                                rows={1}
                                             />
                                         </div>
 
-                                        <div className="w-full flex-1 space-y-4">
+                                        <div className="w-full space-y-4">
                                             <Label className="block text-sm font-medium mb-2">
-                                                Description
+                                                Agent Types
                                             </Label>
-                                            <Textarea
-                                                value={basicInfo.description}
-                                                onChange={({ target }) =>
-                                                    setBasicInfo((prev) => ({
-                                                        ...prev,
-                                                        description:
-                                                            target.value,
-                                                    }))
+                                            <Select
+                                                value={agentType}
+                                                onValueChange={(value) =>
+                                                    setAgentType(
+                                                        value as AgentType
+                                                    )
                                                 }
-                                                placeholder="Type your message..."
-                                                className={cn(
-                                                    'min-h-[52px] max-h-[120px] resize-none transition-all duration-200',
-                                                    'focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:border-purple-500',
-                                                    'text-sm sm:text-base'
-                                                )}
-                                                rows={1}
+                                                width="w-full"
+                                                defaultLabel="Communication Tone"
+                                                required
+                                                className="-mt-0.5"
+                                                aria-label="Select Connection Tone"
+                                                selectItems={AgentTypeSelection}
                                             />
                                         </div>
+                                    </div>
+                                    <div className="w-full space-y-4">
+                                        <Label className="block text-sm font-medium mb-2">
+                                            Description
+                                        </Label>
+                                        <Textarea
+                                            value={basicInfo.description}
+                                            onChange={({ target }) =>
+                                                setBasicInfo((prev) => ({
+                                                    ...prev,
+                                                    description: target.value,
+                                                }))
+                                            }
+                                            placeholder="Type your message..."
+                                            className={cn(
+                                                'min-h-[52px] max-h-[120px] resize-none transition-all duration-200',
+                                                'focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:border-purple-500',
+                                                'text-sm sm:text-base'
+                                            )}
+                                            rows={1}
+                                        />
                                     </div>
                                 </div>
                                 <div className="border-b w-full pb-6 pt-2">
@@ -1036,6 +1079,7 @@ const AgentsSettings: React.FC = () => {
                                 Test Response
                             </Button>
                         </div>
+                        {/* TODO: Chat response here */}
                     </div>
 
                     <div className="bg-card border border-border rounded-lg p-4">

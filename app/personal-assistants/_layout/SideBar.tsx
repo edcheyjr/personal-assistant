@@ -16,6 +16,7 @@ import React, { useState } from 'react'
 import { cn } from '@/utils/cn'
 import { signOut } from 'next-auth/react'
 import { useAgents } from '@/hooks/api/use-agents'
+import { AgentType } from '@/types/agent'
 
 type Props = {
     sidebarOpen: boolean
@@ -41,6 +42,13 @@ const SideMenuBar = ({
     const { data, isLoading, error } = useAgents()
     const agents = Array.isArray(data?.data) ? data.data : []
 
+    const numberUniqueAgentTypes = agents.reduce(
+        (set: Set<AgentType>, agent) => {
+            set.add(agent.agent_type)
+            return set
+        },
+        new Set<AgentType>()
+    ).size
     const handleSignOut = async () => {
         setLoading(false)
         await signOut()
@@ -138,14 +146,14 @@ const SideMenuBar = ({
                                 {agents.length}
                             </span>
                         </div>
-                        {/* <div className="flex justify-between items-center">
+                        <div className="flex justify-between items-center">
                             <span className="text-muted-foreground">
-                                Agent Groups
+                                Agent Types
                             </span>
                             <span className="font-medium text-foreground">
-                                2
+                                {numberUniqueAgentTypes}
                             </span>
-                        </div> */}
+                        </div>
                         <div className="flex justify-between items-center">
                             <span className="text-muted-foreground">
                                 System Status
