@@ -2,13 +2,13 @@
 
 import { signIn } from '@/lib/auth'
 import { loginSchema } from '@/lib/validation/auth'
-import { User } from '@/types/user'
+import { AuthUser } from '@/types/user'
 import { AuthError } from 'next-auth'
 import z from 'zod'
 
 export async function loginUser(data: z.infer<typeof loginSchema>) {
     const apiResponse: Response | null = null
-    const userDTO: User | null = null
+    const userDTO: AuthUser | null = null
 
     //  Validate user credentials
     const validationInfo = loginSchema.safeParse(data)
@@ -43,6 +43,6 @@ export async function loginUser(data: z.infer<typeof loginSchema>) {
     return {
         success: true,
         message: 'You have been logged in successfully',
-        data: { urlToRedirect: '/dashboard' },
+        data: { urlToRedirect: '/' },
     }
 }

@@ -8,6 +8,7 @@ import { cn } from '@/utils/cn'
 type Props = {
     message: string
     isRecording: boolean
+    disabled: boolean
     handleSendMessage: () => void
     handleKeyPress: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void
     toggleListening: () => void
@@ -15,6 +16,7 @@ type Props = {
 }
 
 const MessageInput = ({
+    disabled,
     message,
     isRecording,
     handleKeyPress,
@@ -46,6 +48,7 @@ const MessageInput = ({
             <div className="flex items-end gap-2 sm:gap-3">
                 <div className="relative flex-1">
                     <Textarea
+                        disabled={disabled}
                         ref={textareaRef}
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}

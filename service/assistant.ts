@@ -1,5 +1,4 @@
-// assistant.ts
-'use server'
+import 'server-only'
 
 import {
     Agent,
@@ -7,7 +6,8 @@ import {
     UpdateAgentRequest,
     StreamParams,
     ApiResponse,
-} from '@/types/assistant'
+    ThreadId,
+} from '@/types/agent'
 import { auth } from '@/lib/auth' // adjust the path to your actual auth helper
 import { getAPIBaseURL } from '@/utils/baseUrl'
 
@@ -62,8 +62,8 @@ class AssistantService {
     }
 
     // UUID Methods
-    async generateThreadId(): Promise<ApiResponse<string>> {
-        return this.makeRequest<string>('/uuids/thread_id', {
+    private async generateThreadId(): Promise<ApiResponse<ThreadId>> {
+        return this.makeRequest<ThreadId>('/uuids/thread_id', {
             method: 'GET',
         })
     }
@@ -134,9 +134,11 @@ class AssistantService {
         token?: string
     ): Promise<ApiResponse<ReadableStream<Uint8Array>>> {
         try {
+            const { data } = await this.generateThreadId()
             const searchParams = new URLSearchParams({
                 user_input: params.user_input,
-                thread_id: params.thread_id,
+                thread_id:
+                    params.thread_id ?? data?.thread_id ?? crypto.randomUUID(),
                 agent_id: params.agent_id,
             })
             const baseUrl = getAPIBaseURL()
@@ -220,43 +222,3 @@ class AssistantService {
 
 // Export singleton instance
 export const assistantService = new AssistantService()
-
-// Server Actions
-export async function createAgentAction(agentData: CreateAgentRequest) {
-    const session = await auth()
-    const token = session?.user?.token
-    return assistantService.createAgent(agentData, token)
-}
-
-// export async function getAgentAction(agentId: string) {
-//     const session = await auth()
-//     const token = session?.user?.token
-//     return assistantService.getAgent(agentId, token)
-// }
-
-export async function updateAgentAction(
-    agentId: string,
-    updateData: UpdateAgentRequest
-) {
-    const session = await auth()
-    const token = session?.user?.token
-    return assistantService.updateAgent(agentId, updateData, token)
-}
-
-export async function deleteAgentAction(agentId: string) {
-    const session = await auth()
-    const token = session?.user?.token
-    return assistantService.deleteAgent(agentId, token)
-}
-
-export async function streamAgentResponseAction(params: StreamParams) {
-    const session = await auth()
-    const token = session?.user?.token
-    return assistantService.streamAgentResponse(params, token)
-}
-
-export async function getCurrentUserAction() {
-    const session = await auth()
-    const token = session?.user?.token
-    return assistantService.getCurrentUser(token!)
-}

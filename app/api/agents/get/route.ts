@@ -1,5 +1,5 @@
 import { auth } from '@/lib/auth'
-import { ApiResponse } from '@/types/assistant'
+import { ApiResponse } from '@/types/agent'
 import { getAPIBaseURL } from '@/utils/baseUrl'
 import { CONTENT_TYPE, unknownErr } from '@/utils/constants'
 import { NextRequest, NextResponse } from 'next/server'

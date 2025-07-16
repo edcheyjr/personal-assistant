@@ -56,7 +56,7 @@ export interface UpdateAgentRequest {
 }
 export interface StreamParams {
     user_input: string
-    thread_id: string
+    thread_id?: string
     agent_id: string
 }
 
@@ -64,4 +64,8 @@ export interface ApiResponse<T> {
     data?: T
     error?: string
     status: number
+}
+
+export interface ThreadId {
+    thread_id: string
 }

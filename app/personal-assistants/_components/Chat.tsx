@@ -2,23 +2,34 @@
 
 import React, { useEffect, useRef, useState } from 'react'
 import { Bot } from 'lucide-react'
-import { Message } from '@/types/message'
+import { AgentEvent, Message } from '@/types/message'
 import { default as MessageComponent } from '@/components/chat/Message'
 import MessageInput from '@/components/chat/MessageInput'
+import { useParams } from 'next/navigation'
+import { streamAgentResponseAction } from '@/server-actions/agents'
 
 interface QuickGroup {
     name: string
     active: boolean
 }
 
+interface StreamingMessage extends Message {
+    isStreaming?: boolean
+    agentName?: string
+}
+
 const VoiceAICustomerInterface: React.FC = () => {
+    const { id } = useParams() // current assistant id
     const [message, setMessage] = useState<string>('')
     const [isListening, setIsListening] = useState<boolean>(false)
     const [isRecording, setIsRecording] = useState<boolean>(false)
-    const [messages, setMessages] = useState<Message[]>([])
+    const [messages, setMessages] = useState<StreamingMessage[]>([])
     const [selectedGroup, setSelectedGroup] = useState<string>('Support Team')
+    const [isStreaming, setIsStreaming] = useState<boolean>(false)
+    const [threadId] = useState<string>(() => crypto.randomUUID())
 
     const messagesEndRef = useRef<HTMLDivElement>(null)
+    const abortControllerRef = useRef<AbortController | null>(null)
 
     const scrollToBottom = (): void => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -28,9 +39,206 @@ const VoiceAICustomerInterface: React.FC = () => {
         scrollToBottom()
     }, [messages])
 
-    const handleSendMessage = (): void => {
-        if (message.trim()) {
-            const newMessage: Message = {
+    const handleStreamResponse = async (userMessage: string) => {
+        // Cancel any existing stream
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort()
+        }
+
+        abortControllerRef.current = new AbortController()
+        setIsStreaming(true)
+
+        try {
+            const { data: stream } = await streamAgentResponseAction({
+                user_input: userMessage,
+                // thread_id: threadId,
+                agent_id: '7701aaeb-b495-44cd-81f4-0307bbbeefcc',
+            })
+            if (!stream) {
+                return
+            }
+            const reader = stream.getReader()
+            const decoder = new TextDecoder()
+
+            let currentAgentMessage: StreamingMessage | null = null
+            let agentName = ''
+            let streamingContent = ''
+            let streamingMessageId: number | null = null
+
+            while (true) {
+                const { done, value } = await reader.read()
+                if (done) break
+
+                const chunk = decoder.decode(value, { stream: true })
+                const lines = chunk.split('\n')
+
+                for (const line of lines) {
+                    if (line.startsWith('event: agent_event')) {
+                        continue
+                    }
+
+                    if (line.startsWith('data: ')) {
+                        try {
+                            const eventData: AgentEvent = JSON.parse(
+                                line.slice(6)
+                            )
+
+                            // Handle different event types
+                            if (
+                                eventData.event === 'on_chain_start' &&
+                                eventData.name === 'LangGraph'
+                            ) {
+                                // Extract agent name from the initial data
+                                agentName =
+                                    eventData.data?.input?.agent_properties
+                                        ?.name || 'AI Assistant'
+                            }
+
+                            if (eventData.event === 'on_chat_model_start') {
+                                // Start of AI response generation
+                                streamingContent = ''
+                                streamingMessageId = Date.now()
+
+                                const streamingMessage: StreamingMessage = {
+                                    id: streamingMessageId,
+                                    text: '',
+                                    sender: 'ai',
+                                    timestamp: new Date().toLocaleTimeString(
+                                        [],
+                                        {
+                                            hour: '2-digit',
+                                            minute: '2-digit',
+                                        }
+                                    ),
+                                    isStreaming: true,
+                                    agentName: agentName || 'AI Assistant',
+                                }
+
+                                setMessages((prev) => {
+                                    // Remove any existing streaming message and add the new one
+                                    const withoutStreaming = prev.filter(
+                                        (msg) => !msg.isStreaming
+                                    )
+                                    return [
+                                        ...withoutStreaming,
+                                        streamingMessage,
+                                    ]
+                                })
+                            }
+
+                            if (eventData.event === 'on_chat_model_stream') {
+                                // Handle streaming content chunks
+                                if (
+                                    eventData.data?.chunk &&
+                                    streamingMessageId
+                                ) {
+                                    streamingContent += eventData.data.chunk
+
+                                    setMessages((prev) => {
+                                        return prev.map((msg) => {
+                                            if (msg.id === streamingMessageId) {
+                                                return {
+                                                    ...msg,
+                                                    text: streamingContent,
+                                                }
+                                            }
+                                            return msg
+                                        })
+                                    })
+                                }
+                            }
+
+                            if (
+                                eventData.event === 'on_chain_end' &&
+                                eventData.name === 'LangGraph'
+                            ) {
+                                // Process the final response
+                                const output = eventData.data?.output
+                                if (output?.messages) {
+                                    const aiMessages = output.messages.filter(
+                                        (msg) =>
+                                            msg.type === 'AIMessage' ||
+                                            msg.role === 'assistant'
+                                    )
+                                    const latestAiMessage =
+                                        aiMessages[aiMessages.length - 1]
+
+                                    if (
+                                        latestAiMessage &&
+                                        latestAiMessage.content
+                                    ) {
+                                        // Create or update the agent message
+                                        const agentMessage: StreamingMessage = {
+                                            id:
+                                                streamingMessageId ||
+                                                Date.now(),
+                                            text: latestAiMessage.content,
+                                            sender: 'ai',
+                                            timestamp:
+                                                new Date().toLocaleTimeString(
+                                                    [],
+                                                    {
+                                                        hour: '2-digit',
+                                                        minute: '2-digit',
+                                                    }
+                                                ),
+                                            isStreaming: false,
+                                            agentName:
+                                                output.agent_name ||
+                                                agentName ||
+                                                'AI Assistant',
+                                        }
+
+                                        setMessages((prev) => {
+                                            // Remove any existing streaming message and add the final one
+                                            const withoutStreaming =
+                                                prev.filter(
+                                                    (msg) => !msg.isStreaming
+                                                )
+                                            return [
+                                                ...withoutStreaming,
+                                                agentMessage,
+                                            ]
+                                        })
+
+                                        currentAgentMessage = agentMessage
+                                    }
+                                }
+                            }
+                        } catch (error) {
+                            console.error('Error parsing stream data:', error)
+                        }
+                    }
+
+                    if (line.startsWith('event: completed')) {
+                        // Stream completed
+                        setIsStreaming(false)
+                        return
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Stream error:', error)
+            setIsStreaming(false)
+
+            // Add error message
+            const errorMessage: StreamingMessage = {
+                id: Date.now(),
+                text: "I'm sorry, I encountered an error. Please try again.",
+                sender: 'ai',
+                timestamp: new Date().toLocaleTimeString([], {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                }),
+                isStreaming: false,
+            }
+            setMessages((prev) => [...prev, errorMessage])
+        }
+    }
+
+    const handleSendMessage = async (): Promise<void> => {
+        if (message.trim() && !isStreaming) {
+            const newMessage: StreamingMessage = {
                 id: Date.now(),
                 text: message,
                 sender: 'user',
@@ -39,22 +247,26 @@ const VoiceAICustomerInterface: React.FC = () => {
                     minute: '2-digit',
                 }),
             }
+
             setMessages((prev) => [...prev, newMessage])
+            const userMessage = message
             setMessage('')
 
-            // Simulate AI response
-            setTimeout(() => {
-                const aiResponse: Message = {
-                    id: Date.now() + 1,
-                    text: "I understand you'd like to start a conversation. How can I assist you today?",
-                    sender: 'ai',
-                    timestamp: new Date().toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                    }),
-                }
-                setMessages((prev) => [...prev, aiResponse])
-            }, 1000)
+            // Add streaming indicator
+            const streamingMessage: StreamingMessage = {
+                id: Date.now() + 1,
+                text: 'Thinking...',
+                sender: 'ai',
+                timestamp: new Date().toLocaleTimeString([], {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                }),
+                isStreaming: true,
+            }
+            setMessages((prev) => [...prev, streamingMessage])
+
+            // Handle the stream response
+            await handleStreamResponse(userMessage)
         }
     }
 
@@ -77,6 +289,15 @@ const VoiceAICustomerInterface: React.FC = () => {
         { name: 'Creative Collective', active: false },
     ]
 
+    // Cleanup on unmount
+    useEffect(() => {
+        return () => {
+            if (abortControllerRef.current) {
+                abortControllerRef.current.abort()
+            }
+        }
+    }, [])
+
     return (
         <div className="flex flex-1 flex-col">
             {/* Messages */}
@@ -96,7 +317,36 @@ const VoiceAICustomerInterface: React.FC = () => {
                 ) : (
                     <div className="mx-auto max-w-4xl">
                         {messages.map((msg) => (
-                            <MessageComponent key={msg.id} message={msg} />
+                            <div key={msg.id} className="mb-4">
+                                <MessageComponent message={msg} />
+                                {msg.isStreaming && (
+                                    <div className="mt-2 flex items-center gap-2 text-sm text-gray-500">
+                                        <div className="flex gap-1">
+                                            <div className="w-2 h-2 bg-purple-600 rounded-full animate-pulse"></div>
+                                            <div
+                                                className="w-2 h-2 bg-purple-600 rounded-full animate-pulse"
+                                                style={{
+                                                    animationDelay: '0.2s',
+                                                }}
+                                            ></div>
+                                            <div
+                                                className="w-2 h-2 bg-purple-600 rounded-full animate-pulse"
+                                                style={{
+                                                    animationDelay: '0.4s',
+                                                }}
+                                            ></div>
+                                        </div>
+                                        <span>Assistant is typing...</span>
+                                    </div>
+                                )}
+                                {msg.agentName &&
+                                    msg.sender === 'ai' &&
+                                    !msg.isStreaming && (
+                                        <div className="mt-1 text-xs text-gray-500">
+                                            — {msg.agentName}
+                                        </div>
+                                    )}
+                            </div>
                         ))}
                         <div ref={messagesEndRef} />
                     </div>
@@ -104,7 +354,7 @@ const VoiceAICustomerInterface: React.FC = () => {
             </div>
 
             {/* Input Area */}
-            <div className="border-t p-5 bg-card ">
+            <div className="border-t p-5 bg-card">
                 <div className="mx-auto max-w-4xl">
                     {/* Quick Groups */}
                     <div className="mb-4 flex flex-wrap gap-2">
@@ -134,7 +384,25 @@ const VoiceAICustomerInterface: React.FC = () => {
                         handleKeyPress={handleKeyPress}
                         handleSendMessage={handleSendMessage}
                         toggleListening={toggleListening}
+                        disabled={isStreaming}
                     />
+
+                    {isStreaming && (
+                        <div className="mt-2 text-sm text-gray-500 flex items-center gap-2">
+                            <div className="flex gap-1">
+                                <div className="w-1 h-1 bg-purple-600 rounded-full animate-pulse"></div>
+                                <div
+                                    className="w-1 h-1 bg-purple-600 rounded-full animate-pulse"
+                                    style={{ animationDelay: '0.2s' }}
+                                ></div>
+                                <div
+                                    className="w-1 h-1 bg-purple-600 rounded-full animate-pulse"
+                                    style={{ animationDelay: '0.4s' }}
+                                ></div>
+                            </div>
+                            <span>Processing your message...</span>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

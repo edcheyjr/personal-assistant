@@ -1,6 +1,6 @@
 'use client'
 
-import { Agent } from '@/types/assistant'
+import { Agent } from '@/types/agent'
 import {
     Bot,
     Edit,

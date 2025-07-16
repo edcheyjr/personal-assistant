@@ -1,4 +1,4 @@
-import { Agent } from '@/types/assistant'
+import { Agent } from '@/types/agent'
 import { AGENTS_TAG } from '@/utils/constants'
 import { useQuery } from '@tanstack/react-query'
 
