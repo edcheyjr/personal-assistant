@@ -27,6 +27,16 @@ import { Button } from '@/components/ui/button'
 import { setStorageItem } from '@/utils/localstorageAccess'
 import { ColorKey } from '@/utils/constants'
 import { SliderComponent } from '@/components/Slider'
+import Select from '@/components/inputs/select-input'
+
+import type {
+    Agent,
+    PersonalityTraits,
+    AgentProperties,
+    AgentConfig,
+    VoiceSettings,
+    AgentType,
+} from '@/types/agent'
 
 // Temporary mock implementation of useAgents hook
 const useAgents = (params: { skip?: number; limit?: number } = {}) => {
@@ -37,14 +47,39 @@ const useAgents = (params: { skip?: number; limit?: number } = {}) => {
             agent_type: 'personal',
             description: 'General purpose assistant for daily tasks',
             personality_traits: {
-                formality: 80,
-                empathy: 70,
-                humor: 30,
-                verbosity: 50,
+                formal: 0.8,
+                friendly: 0.7,
+                professional: 0.9,
+                conversational: 0.6,
+                humorous: 0.3,
+                serious: 0.7,
+                direct: 0.5,
+                verbose: 0.5,
             },
-            agent_properties: {},
-            config: {},
-            voice_settings: {},
+            agent_properties: {
+                name: 'Personal Assistant',
+                tone: 'Professional and helpful',
+                objective: 'Assist with daily tasks and productivity',
+                socratic_approach: 'No',
+                conversation_style: 'Direct and efficient',
+                response_to_greetings: 'Professional and warm',
+                focus: 'Task completion',
+                interactivity: 'Provide clear instructions',
+                response_format: 'Structured',
+                personality_traits: ['efficient', 'reliable', 'organized'],
+            },
+            config: {
+                max_history: 20,
+                temperature: 0.3,
+                model: 'gpt-4o',
+            },
+            voice_settings: {
+                enabled: true,
+                voice_id: 'en_us_002',
+                speaking_rate: 1.0,
+                pitch: 0,
+                volume: 1,
+            },
             user_id: 'user1',
         },
         {
@@ -53,14 +88,39 @@ const useAgents = (params: { skip?: number; limit?: number } = {}) => {
             agent_type: 'technical',
             description: 'Specialized in technical troubleshooting',
             personality_traits: {
-                formality: 90,
-                empathy: 50,
-                humor: 10,
-                verbosity: 40,
+                formal: 0.9,
+                friendly: 0.5,
+                professional: 0.95,
+                conversational: 0.4,
+                humorous: 0.1,
+                serious: 0.9,
+                direct: 0.8,
+                verbose: 0.4,
             },
-            agent_properties: {},
-            config: {},
-            voice_settings: {},
+            agent_properties: {
+                name: 'Technical Support',
+                tone: 'Professional and precise',
+                objective: 'Solve technical problems efficiently',
+                socratic_approach: 'Yes',
+                conversation_style: 'Methodical and thorough',
+                response_to_greetings: 'Professional',
+                focus: 'Problem resolution',
+                interactivity: 'Ask diagnostic questions',
+                response_format: 'Step-by-step',
+                personality_traits: ['analytical', 'methodical', 'patient'],
+            },
+            config: {
+                max_history: 30,
+                temperature: 0.2,
+                model: 'gpt-4o',
+            },
+            voice_settings: {
+                enabled: false,
+                voice_id: 'en_us_003',
+                speaking_rate: 0.9,
+                pitch: 0,
+                volume: 1,
+            },
             user_id: 'user1',
         },
         {
@@ -69,14 +129,43 @@ const useAgents = (params: { skip?: number; limit?: number } = {}) => {
             agent_type: 'creative',
             description: 'Helps with creative writing and content',
             personality_traits: {
-                formality: 30,
-                empathy: 80,
-                humor: 70,
-                verbosity: 60,
+                formal: 0.3,
+                friendly: 0.8,
+                professional: 0.6,
+                conversational: 0.9,
+                humorous: 0.7,
+                serious: 0.4,
+                direct: 0.5,
+                verbose: 0.6,
             },
-            agent_properties: {},
-            config: {},
-            voice_settings: {},
+            agent_properties: {
+                name: 'Creative Writer',
+                tone: 'Inspiring and encouraging',
+                objective: 'Foster creativity and help with writing',
+                socratic_approach: 'Yes',
+                conversation_style: 'Engaging and supportive',
+                response_to_greetings: 'Warm and enthusiastic',
+                focus: 'Creative expression',
+                interactivity: 'Encourage exploration',
+                response_format: 'Conversational',
+                personality_traits: [
+                    'imaginative',
+                    'encouraging',
+                    'expressive',
+                ],
+            },
+            config: {
+                max_history: 25,
+                temperature: 0.7,
+                model: 'gpt-4o',
+            },
+            voice_settings: {
+                enabled: true,
+                voice_id: 'en_us_004',
+                speaking_rate: 1.1,
+                pitch: 0.1,
+                volume: 1,
+            },
             user_id: 'user1',
         },
     ]
@@ -88,40 +177,16 @@ const useAgents = (params: { skip?: number; limit?: number } = {}) => {
     }
 }
 
-// Type definitions
-interface PersonalityTraits {
-    [key: string]: number
-}
-
-interface AgentProperties {
-    [key: string]: any
-}
-
-interface AgentConfig {
-    [key: string]: any
-}
-
-interface VoiceSettings {
-    [key: string]: any
-}
-
-interface Agent {
-    id: string
-    name: string
-    agent_type: string
-    description: string
-    personality_traits: PersonalityTraits
-    agent_properties: AgentProperties
-    config: AgentConfig
-    voice_settings: VoiceSettings
-    user_id: string
-}
-
+// Updated interface for personality sliders to match our types
 interface PersonalitySliders {
-    formality: number
-    empathy: number
-    humor: number
-    verbosity: number
+    formal: number
+    friendly: number
+    professional: number
+    conversational: number
+    humorous: number
+    serious: number
+    direct: number
+    verbose: number
 }
 
 interface IconOption {
@@ -171,6 +236,46 @@ const ThemeContext = React.createContext<{
     theme: 'dark',
     toggleTheme: () => {},
 })
+
+const communicationTones: CommunicationTone[] = [
+    'Professional',
+    'Casual',
+    'Friendly',
+    'Formal',
+    'Conversational',
+]
+
+// Helper function to convert personality traits to sliders
+const personalityTraitsToSliders = (
+    traits: PersonalityTraits
+): PersonalitySliders => {
+    return {
+        formal: Math.round(traits.formal * 100),
+        friendly: Math.round(traits.friendly * 100),
+        professional: Math.round(traits.professional * 100),
+        conversational: Math.round(traits.conversational * 100),
+        humorous: Math.round(traits.humorous * 100),
+        serious: Math.round(traits.serious * 100),
+        direct: Math.round(traits.direct * 100),
+        verbose: Math.round(traits.verbose * 100),
+    }
+}
+
+// Helper function to convert sliders back to personality traits
+const slidersToPersonalityTraits = (
+    sliders: PersonalitySliders
+): PersonalityTraits => {
+    return {
+        formal: sliders.formal / 100,
+        friendly: sliders.friendly / 100,
+        professional: sliders.professional / 100,
+        conversational: sliders.conversational / 100,
+        humorous: sliders.humorous / 100,
+        serious: sliders.serious / 100,
+        direct: sliders.direct / 100,
+        verbose: sliders.verbose / 100,
+    }
+}
 
 // Agent Selector Component
 const AgentSelector: React.FC<{
@@ -286,6 +391,10 @@ const AgentSelector: React.FC<{
 const AgentsSettings: React.FC = () => {
     // Fetch agents using the provided hook
     const { data: agents = [], isLoading, error } = useAgents()
+    const selectCommunicationTone = communicationTones.map((tone) => ({
+        value: tone,
+        label: tone,
+    }))
 
     const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null)
     const [activeTab, setActiveTab] = useState<TabType>('personality')
@@ -298,10 +407,14 @@ const AgentsSettings: React.FC = () => {
     ])
     const [personalitySliders, setPersonalitySliders] =
         useState<PersonalitySliders>({
-            formality: 80,
-            empathy: 30,
-            humor: 10,
-            verbosity: 40,
+            formal: 80,
+            friendly: 30,
+            professional: 90,
+            conversational: 40,
+            humorous: 10,
+            serious: 80,
+            direct: 70,
+            verbose: 40,
         })
     const [communicationTone, setCommunicationTone] =
         useState<CommunicationTone>('Professional')
@@ -335,24 +448,41 @@ const AgentsSettings: React.FC = () => {
         'diplomatic',
     ]
 
-    // Set first agent as selected when data loads
+    // Set first agent as selected when data loads and populate form
     React.useEffect(() => {
         if (agents.length > 0 && !selectedAgent) {
-            setSelectedAgent(agents[0])
+            const firstAgent = agents[0]
+            setSelectedAgent(firstAgent)
+            loadAgentData(firstAgent)
         }
     }, [agents, selectedAgent])
 
+    const loadAgentData = (agent: Agent) => {
+        // Load personality sliders
+        setPersonalitySliders(
+            personalityTraitsToSliders(agent.personality_traits)
+        )
+
+        // Load personality traits from agent_properties
+        if (agent.agent_properties.personality_traits) {
+            setPersonalityTraits(agent.agent_properties.personality_traits)
+        }
+
+        // Load communication tone from agent_properties
+        if (agent.agent_properties.tone) {
+            const tone = agent.agent_properties.tone
+            const matchedTone = communicationTones.find((t) =>
+                tone.toLowerCase().includes(t.toLowerCase())
+            )
+            if (matchedTone) {
+                setCommunicationTone(matchedTone)
+            }
+        }
+    }
+
     const handleEditAgent = (agent: Agent) => {
         setSelectedAgent(agent)
-        // Load agent settings into form
-        if (agent.personality_traits) {
-            setPersonalitySliders({
-                formality: agent.personality_traits.formality || 50,
-                empathy: agent.personality_traits.empathy || 50,
-                humor: agent.personality_traits.humor || 50,
-                verbosity: agent.personality_traits.verbosity || 50,
-            })
-        }
+        loadAgentData(agent)
     }
 
     const handleDeleteAgent = (agentId: string) => {
@@ -366,6 +496,24 @@ const AgentsSettings: React.FC = () => {
         // Open modal for creating new agent
         console.log('Creating new agent...')
     }
+
+    const handleSaveConfiguration = () => {
+        if (!selectedAgent) return
+
+        const updatedAgent: Agent = {
+            ...selectedAgent,
+            personality_traits: slidersToPersonalityTraits(personalitySliders),
+            agent_properties: {
+                ...selectedAgent.agent_properties,
+                personality_traits: personalityTraits,
+                tone: communicationTone,
+            },
+        }
+
+        console.log('Saving agent configuration:', updatedAgent)
+        // Implement save logic here
+    }
+
     const handleThemeManagement = (color: string) => {
         setSelectedColor(color)
         setStorageItem(ColorKey, color)
@@ -489,7 +637,7 @@ const AgentsSettings: React.FC = () => {
     }
 
     return (
-        <div className=" size-full bg-background text-foreground p-6">
+        <div className="size-full bg-background text-foreground p-6">
             <div className="flex flex-wrap gap-6 justify-between items-center mb-8">
                 <div className="flex items-center gap-4">
                     <div
@@ -512,7 +660,10 @@ const AgentsSettings: React.FC = () => {
                         <AgentSelector
                             agents={agents}
                             selectedAgent={selectedAgent}
-                            onSelectAgent={setSelectedAgent}
+                            onSelectAgent={(agent) => {
+                                setSelectedAgent(agent)
+                                loadAgentData(agent)
+                            }}
                             onCreateNew={handleCreateNew}
                             selectedColor={selectedColor}
                         />
@@ -521,6 +672,7 @@ const AgentsSettings: React.FC = () => {
                         variant={'default'}
                         size={'lg'}
                         className="font-bold"
+                        onClick={handleSaveConfiguration}
                         style={{
                             backgroundColor: selectedColor,
                             padding: `0 20px`,
@@ -698,72 +850,82 @@ const AgentsSettings: React.FC = () => {
                                     </h3>
                                     <SliderComponent
                                         selectedColor={selectedColor}
-                                        label="🎭 Formality"
-                                        value={personalitySliders.formality}
+                                        label="🎭 Formal"
+                                        value={personalitySliders.formal}
                                         onChange={(value) =>
-                                            updateSlider('formality', value)
+                                            updateSlider('formal', value)
+                                        }
+                                        percentage={personalitySliders.formal}
+                                    />
+                                    <SliderComponent
+                                        selectedColor={selectedColor}
+                                        label="😊 Friendly"
+                                        value={personalitySliders.friendly}
+                                        onChange={(value) =>
+                                            updateSlider('friendly', value)
+                                        }
+                                        percentage={personalitySliders.friendly}
+                                    />
+                                    <SliderComponent
+                                        selectedColor={selectedColor}
+                                        label="💼 Professional"
+                                        value={personalitySliders.professional}
+                                        onChange={(value) =>
+                                            updateSlider('professional', value)
                                         }
                                         percentage={
-                                            personalitySliders.formality
+                                            personalitySliders.professional
                                         }
                                     />
                                     <SliderComponent
                                         selectedColor={selectedColor}
-                                        label="❤️ Empathy"
-                                        value={personalitySliders.empathy}
-                                        onChange={(value) =>
-                                            updateSlider('empathy', value)
+                                        label="💬 Conversational"
+                                        value={
+                                            personalitySliders.conversational
                                         }
-                                        percentage={personalitySliders.empathy}
+                                        onChange={(value) =>
+                                            updateSlider(
+                                                'conversational',
+                                                value
+                                            )
+                                        }
+                                        percentage={
+                                            personalitySliders.conversational
+                                        }
                                     />
                                     <SliderComponent
                                         selectedColor={selectedColor}
-                                        label="😊 Humor"
-                                        value={personalitySliders.humor}
+                                        label="😄 Humorous"
+                                        value={personalitySliders.humorous}
                                         onChange={(value) =>
-                                            updateSlider('humor', value)
+                                            updateSlider('humorous', value)
                                         }
-                                        percentage={personalitySliders.humor}
+                                        percentage={personalitySliders.humorous}
                                     />
                                     <SliderComponent
                                         selectedColor={selectedColor}
                                         label="🗣️ Verbosity"
-                                        value={personalitySliders.verbosity}
+                                        value={personalitySliders.verbose}
                                         onChange={(value) =>
-                                            updateSlider('verbosity', value)
+                                            updateSlider('verbose', value)
                                         }
-                                        percentage={
-                                            personalitySliders.verbosity
-                                        }
+                                        percentage={personalitySliders.verbose}
                                     />
                                 </div>
 
-                                <div>
-                                    <h3 className="font-medium mb-4">
-                                        Communication Tone
-                                    </h3>
-                                    <select
-                                        value={communicationTone}
-                                        onChange={(e) =>
+                                <div className="w-full">
+                                    <Select
+                                        onValueChange={(value) =>
                                             setCommunicationTone(
-                                                e.target
-                                                    .value as CommunicationTone
+                                                value as CommunicationTone
                                             )
                                         }
-                                        className="w-full p-3 bg-background border border-border rounded-lg focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-                                    >
-                                        <option value="Professional">
-                                            Professional
-                                        </option>
-                                        <option value="Casual">Casual</option>
-                                        <option value="Friendly">
-                                            Friendly
-                                        </option>
-                                        <option value="Formal">Formal</option>
-                                        <option value="Conversational">
-                                            Conversational
-                                        </option>
-                                    </select>
+                                        width="w-full"
+                                        defaultLabel="Communication Tone"
+                                        required
+                                        aria-label="Select Connection Tone"
+                                        selectItems={selectCommunicationTone}
+                                    />
                                 </div>
                             </div>
                         )}
