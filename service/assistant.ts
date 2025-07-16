@@ -8,7 +8,6 @@ import {
     ApiResponse,
     ThreadId,
 } from '@/types/agent'
-import { auth } from '@/lib/auth' // adjust the path to your actual auth helper
 import { getAPIBaseURL } from '@/utils/baseUrl'
 import { fetchWithTimeout } from '@/utils/fetchWithTimeout'
 
@@ -75,7 +74,7 @@ class AssistantService {
         agentData: CreateAgentRequest,
         token?: string
     ): Promise<ApiResponse<Agent>> {
-        return this.makeRequest<Agent>('/multi-agents/', {
+        return this.makeRequest<Agent>('/multi-agents', {
             method: 'POST',
             headers: this.getAuthHeaders(token),
             body: JSON.stringify(agentData),
@@ -136,7 +135,9 @@ class AssistantService {
         token?: string
     ): Promise<ApiResponse<ReadableStream<Uint8Array>>> {
         try {
-            const { data } = await this.generateThreadId()
+            const { data, error } = await this.generateThreadId()
+            console.log('data', data)
+            console.log('error', error)
             const searchParams = new URLSearchParams({
                 user_input: params.user_input,
                 thread_id:

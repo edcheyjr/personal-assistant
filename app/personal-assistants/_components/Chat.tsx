@@ -60,10 +60,11 @@ const VoiceAICustomerInterface: React.FC = () => {
                 // thread_id: threadId,
                 agent_id: '7701aaeb-b495-44cd-81f4-0307bbbeefcc',
             })
-            if (typeof stream == 'string') {
+            if (typeof stream == 'string' || error || status !== 200) {
                 const errorMessage: StreamingMessage = {
                     id: Date.now(),
-                    text: stream,
+                    text:
+                        typeof stream == 'string' ? stream : error ? error : '',
                     sender: 'system',
                     timestamp: new Date().toLocaleTimeString([], {
                         hour: '2-digit',
