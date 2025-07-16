@@ -36,10 +36,17 @@ import type {
     AgentConfig,
     VoiceSettings,
     AgentType,
+    UpdateAgentRequest,
 } from '@/types/agent'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { cn } from '@/utils/cn'
+import { Label } from '@radix-ui/react-label'
+import { FormMessages } from '@/components/MessageInfo'
+import { useAgents } from '@/hooks/api/use-agents'
 
 // Temporary mock implementation of useAgents hook
-const useAgents = (params: { skip?: number; limit?: number } = {}) => {
+const useMockAgents = (params: { skip?: number; limit?: number } = {}) => {
     const mockAgents: Agent[] = [
         {
             id: '1',
@@ -285,20 +292,25 @@ const AgentSelector: React.FC<{
     onCreateNew: () => void
     selectedColor: string
 }> = ({ agents, selectedAgent, selectedColor, onSelectAgent, onCreateNew }) => {
+    console.log('agents', agents)
     const [isOpen, setIsOpen] = useState(false)
     const [searchTerm, setSearchTerm] = useState('')
 
-    const filteredAgents = agents.filter(
-        (agent) =>
-            agent.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            agent.description.toLowerCase().includes(searchTerm.toLowerCase())
-    )
+    const filteredAgents = Array.isArray(agents)
+        ? agents.filter(
+              (agent) =>
+                  agent.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  agent.description
+                      .toLowerCase()
+                      .includes(searchTerm.toLowerCase())
+          )
+        : []
 
     return (
         <div className="relative w-full">
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="flex items-center gap-2 px-4 py-2 bg-secondary hover:bg-secondary/80 rounded-lg transition-colors w-full z-1"
+                className="flex justify-between items-center gap-2 px-4 py-2 bg-secondary hover:bg-secondary/80 rounded-lg transition-colors w-full z-1"
             >
                 {selectedAgent ? (
                     <>
@@ -391,11 +403,16 @@ const AgentSelector: React.FC<{
 const AgentsSettings: React.FC = () => {
     // Fetch agents using the provided hook
     const { data: agents = [], isLoading, error } = useAgents()
+
     const selectCommunicationTone = communicationTones.map((tone) => ({
         value: tone,
         label: tone,
     }))
 
+    const [basicInfo, setBasicInfo] = useState({
+        title: '',
+        description: '',
+    })
     const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null)
     const [activeTab, setActiveTab] = useState<TabType>('personality')
     const [selectedIcon, setSelectedIcon] = useState<string>('bot')
@@ -453,6 +470,10 @@ const AgentsSettings: React.FC = () => {
         if (agents.length > 0 && !selectedAgent) {
             const firstAgent = agents[0]
             setSelectedAgent(firstAgent)
+            setBasicInfo({
+                title: firstAgent.name,
+                description: firstAgent.description,
+            })
             loadAgentData(firstAgent)
         }
     }, [agents, selectedAgent])
@@ -500,8 +521,10 @@ const AgentsSettings: React.FC = () => {
     const handleSaveConfiguration = () => {
         if (!selectedAgent) return
 
-        const updatedAgent: Agent = {
+        const updatedAgent: UpdateAgentRequest = {
             ...selectedAgent,
+            name: basicInfo.title,
+            description: basicInfo.description,
             personality_traits: slidersToPersonalityTraits(personalitySliders),
             agent_properties: {
                 ...selectedAgent.agent_properties,
@@ -546,7 +569,7 @@ const AgentsSettings: React.FC = () => {
     }) => (
         <button
             onClick={onClick}
-            className={`cursor-pointer flex items-center gap-2 px-4 py-3 rounded-lg transition-all ${
+            className={`cursor-pointer flex items-center gap-2 px-4 py-3 rounded-t-sm transition-all ${
                 active
                     ? 'bg-primary text-primary-foreground'
                     : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
@@ -589,8 +612,8 @@ const AgentsSettings: React.FC = () => {
             <div className="size-full bg-background text-foreground p-6">
                 <div className="max-w-4xl mx-auto">
                     <div className="text-center py-20">
-                        <div className="w-20 h-20 bg-destructive/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                            <Bot className="w-10 h-10 text-destructive" />
+                        <div className="size-20 bg-destructive/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <Bot className="size-10 text-destructive" />
                         </div>
                         <h2 className="text-xl font-bold mb-2 text-destructive">
                             Error Loading Agents
@@ -641,7 +664,7 @@ const AgentsSettings: React.FC = () => {
             <div className="flex flex-wrap gap-6 justify-between items-center mb-8">
                 <div className="flex items-center gap-4">
                     <div
-                        className="size-12 bg-primary rounded-lg flex items-center justify-center"
+                        className="size-12 bg-primary rounded-lg flex items-center justify-center "
                         style={{ backgroundColor: selectedColor }}
                     >
                         <Brain className="size-6 text-primary-foreground" />
@@ -687,7 +710,7 @@ const AgentsSettings: React.FC = () => {
             <div className="size-full lg:grid lg:grid-cols-12 gap-6">
                 <div className="lg:col-span-8">
                     <div className="bg-card border border-border rounded-lg p-6">
-                        <div className="flex gap-2 mb-6">
+                        <div className="flex mb-6 border-b gap-2">
                             <TabButton
                                 id="personality"
                                 label="Personality"
@@ -724,15 +747,66 @@ const AgentsSettings: React.FC = () => {
 
                         {activeTab === 'personality' && (
                             <div className="space-y-6">
-                                <div>
+                                <div className="border-b w-full pb-6">
+                                    <h3 className="font-medium mb-6">
+                                        Basic Information
+                                    </h3>
+                                    <div className="grid min-[2048px]:grid-cols-2 gap-2">
+                                        <div className="w-full mb-4  min-[2048px]:mb-0 flex-1 space-y-4">
+                                            <Label className="block text-sm font-medium mb-2">
+                                                Title
+                                            </Label>
+                                            <Textarea
+                                                value={basicInfo.title}
+                                                onChange={({ target }) =>
+                                                    setBasicInfo((prev) => ({
+                                                        ...prev,
+                                                        title: target.value,
+                                                    }))
+                                                }
+                                                placeholder="Type your message..."
+                                                className={cn(
+                                                    'min-h-[52px] max-h-[120px] resize-none transition-all duration-200',
+                                                    'focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:border-purple-500',
+                                                    'text-sm sm:text-base'
+                                                )}
+                                                rows={1}
+                                            />
+                                        </div>
+
+                                        <div className="w-full flex-1 space-y-4">
+                                            <Label className="block text-sm font-medium mb-2">
+                                                Description
+                                            </Label>
+                                            <Textarea
+                                                value={basicInfo.description}
+                                                onChange={({ target }) =>
+                                                    setBasicInfo((prev) => ({
+                                                        ...prev,
+                                                        description:
+                                                            target.value,
+                                                    }))
+                                                }
+                                                placeholder="Type your message..."
+                                                className={cn(
+                                                    'min-h-[52px] max-h-[120px] resize-none transition-all duration-200',
+                                                    'focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:border-purple-500',
+                                                    'text-sm sm:text-base'
+                                                )}
+                                                rows={1}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="border-b w-full pb-6 pt-2">
                                     <h3 className="font-medium mb-4">
                                         Agent Identity
                                     </h3>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-sm font-medium mb-2">
+                                            <Label className="block text-sm font-medium mb-2">
                                                 Icon
-                                            </label>
+                                            </Label>
                                             <div className="flex gap-2">
                                                 {iconOptions.map(
                                                     ({ id, icon: Icon }) => (
@@ -796,7 +870,7 @@ const AgentsSettings: React.FC = () => {
                                     </div>
                                 </div>
 
-                                <div>
+                                <div className="border-b w-full  pb-6 pt-2">
                                     <h3 className="font-medium mb-4">
                                         Personality Traits
                                     </h3>

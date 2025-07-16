@@ -38,6 +38,7 @@ export const SliderComponent: React.FC<SliderComponentProps> = ({
                     className="w-full h-2 cursor-pointer"
                     trackStyle={{
                         background: `linear-gradient(to right, ${selectedColor} ${value}%, ${selectedColor} ${value}%)`,
+                        opacity: 0.7,
                     }}
                     thumbStyle={{
                         backgroundColor: selectedColor,

@@ -23,8 +23,7 @@ export function useAgents(params: UseAgentsParams = {}) {
 
             const response = await fetch(`/api/agents/get?${searchParams}`)
             const data = (await response.json()) as Agent[]
-
-            if (data) {
+            if (Array.isArray(data)) {
                 return data
             }
             return []
