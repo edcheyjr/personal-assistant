@@ -1,12 +1,13 @@
 export interface Message {
     id: number
     text: string
-    sender: 'user' | 'ai'
+    sender: 'user' | 'assistant' | 'system'
     timestamp: string
 }
 
 export interface MessageProps {
     message: Message
+    isError: boolean
 }
 interface AgentEvent {
     event:

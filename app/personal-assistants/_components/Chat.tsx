@@ -7,6 +7,7 @@ import { default as MessageComponent } from '@/components/chat/Message'
 import MessageInput from '@/components/chat/MessageInput'
 import { useParams } from 'next/navigation'
 import { streamAgentResponseAction } from '@/server-actions/agents'
+import { toast } from 'sonner'
 
 interface QuickGroup {
     name: string
@@ -21,6 +22,7 @@ interface StreamingMessage extends Message {
 const VoiceAICustomerInterface: React.FC = () => {
     const { id } = useParams() // current assistant id
     const [message, setMessage] = useState<string>('')
+    const [isError, setIsError] = useState<boolean>(false)
     const [isListening, setIsListening] = useState<boolean>(false)
     const [isRecording, setIsRecording] = useState<boolean>(false)
     const [messages, setMessages] = useState<StreamingMessage[]>([])
@@ -49,11 +51,32 @@ const VoiceAICustomerInterface: React.FC = () => {
         setIsStreaming(true)
 
         try {
-            const { data: stream } = await streamAgentResponseAction({
+            const {
+                data: stream,
+                error,
+                status,
+            } = await streamAgentResponseAction({
                 user_input: userMessage,
                 // thread_id: threadId,
                 agent_id: '7701aaeb-b495-44cd-81f4-0307bbbeefcc',
             })
+            if (typeof stream == 'string') {
+                const errorMessage: StreamingMessage = {
+                    id: Date.now(),
+                    text: stream,
+                    sender: 'system',
+                    timestamp: new Date().toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                    }),
+                    isStreaming: false,
+                }
+                setMessages((prev) => [...prev, errorMessage])
+                setIsError(true)
+                setIsStreaming(false)
+                toast.error(error)
+                return
+            }
             if (!stream) {
                 return
             }
@@ -102,7 +125,7 @@ const VoiceAICustomerInterface: React.FC = () => {
                                 const streamingMessage: StreamingMessage = {
                                     id: streamingMessageId,
                                     text: '',
-                                    sender: 'ai',
+                                    sender: 'assistant',
                                     timestamp: new Date().toLocaleTimeString(
                                         [],
                                         {
@@ -173,7 +196,7 @@ const VoiceAICustomerInterface: React.FC = () => {
                                                 streamingMessageId ||
                                                 Date.now(),
                                             text: latestAiMessage.content,
-                                            sender: 'ai',
+                                            sender: 'assistant',
                                             timestamp:
                                                 new Date().toLocaleTimeString(
                                                     [],
@@ -218,6 +241,7 @@ const VoiceAICustomerInterface: React.FC = () => {
                 }
             }
         } catch (error) {
+            setIsError(true)
             console.error('Stream error:', error)
             setIsStreaming(false)
 
@@ -225,7 +249,7 @@ const VoiceAICustomerInterface: React.FC = () => {
             const errorMessage: StreamingMessage = {
                 id: Date.now(),
                 text: "I'm sorry, I encountered an error. Please try again.",
-                sender: 'ai',
+                sender: 'system',
                 timestamp: new Date().toLocaleTimeString([], {
                     hour: '2-digit',
                     minute: '2-digit',
@@ -234,6 +258,7 @@ const VoiceAICustomerInterface: React.FC = () => {
             }
             setMessages((prev) => [...prev, errorMessage])
         }
+        setIsError(false)
     }
 
     const handleSendMessage = async (): Promise<void> => {
@@ -256,7 +281,7 @@ const VoiceAICustomerInterface: React.FC = () => {
             const streamingMessage: StreamingMessage = {
                 id: Date.now() + 1,
                 text: 'Thinking...',
-                sender: 'ai',
+                sender: 'assistant',
                 timestamp: new Date().toLocaleTimeString([], {
                     hour: '2-digit',
                     minute: '2-digit',
@@ -318,7 +343,10 @@ const VoiceAICustomerInterface: React.FC = () => {
                     <div className="mx-auto max-w-4xl">
                         {messages.map((msg) => (
                             <div key={msg.id} className="mb-4">
-                                <MessageComponent message={msg} />
+                                <MessageComponent
+                                    message={msg}
+                                    isError={isError}
+                                />
                                 {msg.isStreaming && (
                                     <div className="mt-2 flex items-center gap-2 text-sm text-gray-500">
                                         <div className="flex gap-1">
@@ -340,7 +368,7 @@ const VoiceAICustomerInterface: React.FC = () => {
                                     </div>
                                 )}
                                 {msg.agentName &&
-                                    msg.sender === 'ai' &&
+                                    msg.sender === 'assistant' &&
                                     !msg.isStreaming && (
                                         <div className="mt-1 text-xs text-gray-500">
                                             — {msg.agentName}
