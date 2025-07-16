@@ -1,4 +1,5 @@
 'use client'
+
 import {
     Form,
     FormControl,
@@ -20,7 +21,7 @@ import { createAgentAction } from '@/server-actions/agents'
 import { AGENTS_TAG } from '@/utils/constants'
 import { toast } from 'sonner'
 import { logger } from '@/utils/logger'
-import { Loader2 } from 'lucide-react'
+import { Loader, Loader2 } from 'lucide-react'
 import { AgentTypeSelection } from './Settings'
 import Select from '@/components/inputs/select-input'
 import { useSession } from 'next-auth/react'
@@ -49,21 +50,31 @@ export default function CreateForm({ isOpen, onOpenChange, onClose }: Props) {
             await queryClient.invalidateQueries({
                 queryKey: [AGENTS_TAG],
             })
-            if (response.status == 200) {
+
+            // More robust success handling
+            if (response.status === 200 || response.status === 201) {
                 toast.success('Successfully created agent')
+            } else {
+                toast.error(
+                    'Agent creation completed but with unexpected status'
+                )
             }
             onClose()
         },
         onError: (error: Error & { response?: any }) => {
             logger(error, 'Error', 'error')
-            toast.error(
+
+            // Enhanced error message handling
+            const errorMessage =
+                error.response?.data?.message ??
                 error.response?.message ??
-                    error.message ??
-                    'Failed to create agent'
-            )
+                error.message ??
+                'Failed to create agent'
+
+            toast.error(errorMessage)
         },
         onSettled: async (data, error, variables, context) => {
-            //on settled
+            // Optional: Add loading state cleanup or additional actions
         },
     })
 
@@ -103,9 +114,11 @@ export default function CreateForm({ isOpen, onOpenChange, onClose }: Props) {
             },
         } as CreateAgentRequest
 
+        // Optional: Add loading toast
+        // toast.loading('Creating agent...', { id: 'create-agent' })
+
         mutation.mutate(createAgentData)
     }
-
     function onReset() {
         form.reset()
         form.clearErrors()
@@ -123,19 +136,18 @@ export default function CreateForm({ isOpen, onOpenChange, onClose }: Props) {
                     <Button
                         variant="secondary"
                         onClick={onClose}
-                        className="w-full"
                         disabled={mutation.isPending}
                     >
                         Cancel
                     </Button>
                     <Button
+                        variant={'default'}
                         disabled={!isValid || mutation.isPending}
                         onClick={form.handleSubmit(onSubmit)}
-                        className="w-full max-sm:mb-2"
                     >
                         {mutation.isPending ? (
                             <>
-                                <Loader2 className="mr-1 size-4 animate-spin" />{' '}
+                                <Loader className="size-4 animate-spin" />
                                 Creating...
                             </>
                         ) : (
@@ -149,7 +161,7 @@ export default function CreateForm({ isOpen, onOpenChange, onClose }: Props) {
                 <form
                     onSubmit={form.handleSubmit(onSubmit)}
                     onReset={onReset}
-                    className="space-y-8 @container"
+                    className="space-y-8"
                 >
                     <div className="grid grid-cols-12 gap-4">
                         <FormField

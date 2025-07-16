@@ -37,6 +37,7 @@ import { Label } from '@radix-ui/react-label'
 import { useAgents } from '@/hooks/api/use-agents'
 import Loader from '@/components/Loader'
 import { Input } from '@/components/ui/input'
+import CreateAgentModal from './CreateAgentModal'
 
 //FIXME: Temporary mock implementation of useAgents hook
 const useMockAgents = (params: { skip?: number; limit?: number } = {}) => {
@@ -430,6 +431,7 @@ const AgentsSettings: React.FC = () => {
         title: '',
         description: '',
     })
+    const [openCreateModal, setOpenCreateModal] = useState(false)
     const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null)
     const [activeTab, setActiveTab] = useState<TabType>('personality')
     const [selectedIcon, setSelectedIcon] = useState<string>('bot')
@@ -534,6 +536,7 @@ const AgentsSettings: React.FC = () => {
 
     const handleCreateNew = () => {
         // Open modal for creating new agent
+        setOpenCreateModal(true)
         console.log('Creating new agent...')
     }
 
@@ -1105,6 +1108,11 @@ const AgentsSettings: React.FC = () => {
                     </div>
                 </div>
             </div>
+            <CreateAgentModal
+                isOpen={openCreateModal}
+                onClose={() => setOpenCreateModal(false)}
+                onOpenChange={(open) => setOpenCreateModal(open)}
+            />
         </div>
     )
 }
