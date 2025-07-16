@@ -23,7 +23,7 @@ export default function PersonalAssitants({ sessionData }: any) {
         setSidebarOpen(false)
     }
     return (
-        <div className="relative flex min-h-screen size-full ">
+        <div className="relative flex min-h-screen size-full overflow-hidden ">
             {/* Sidebar Overlay for Mobile */}
 
             {/* Sidebar */}

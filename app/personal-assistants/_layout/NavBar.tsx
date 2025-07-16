@@ -34,6 +34,7 @@ const NavBar = ({ toggleSidebar }: Props) => {
                     className="font-medium text-white text-shadow-2xs text-shadow-black"
                     // className={`font-medium text-white text-shadow-2xs text-shadow-[${themeColor}]`}
                 >
+                    {/* TODO: Title of the bot */}
                     AI Voice Assistant
                 </span>
                 {/* 

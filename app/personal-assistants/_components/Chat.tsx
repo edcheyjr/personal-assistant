@@ -8,6 +8,7 @@ import MessageInput from '@/components/chat/MessageInput'
 import { useParams } from 'next/navigation'
 import { streamAgentResponseAction } from '@/server-actions/agents'
 import { toast } from 'sonner'
+import MessageLoading from '@/components/chat/MessageLoading'
 
 interface QuickGroup {
     name: string
@@ -278,19 +279,18 @@ const VoiceAICustomerInterface: React.FC = () => {
             const userMessage = message
             setMessage('')
 
-            // Add streaming indicator
-            const streamingMessage: StreamingMessage = {
-                id: Date.now() + 1,
-                text: 'Thinking...',
-                sender: 'assistant',
-                timestamp: new Date().toLocaleTimeString([], {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                }),
-                isStreaming: true,
-            }
-            setMessages((prev) => [...prev, streamingMessage])
-
+            //TODO: Add streaming indicator
+            // const streamingMessage: StreamingMessage = {
+            //     id: Date.now() + 1,
+            //     text: 'Thinking...',
+            //     sender: 'assistant',
+            //     timestamp: new Date().toLocaleTimeString([], {
+            //         hour: '2-digit',
+            //         minute: '2-digit',
+            //     }),
+            //     isStreaming: true,
+            // }
+            // setMessages((prev) => [...prev, streamingMessage])
             // Handle the stream response
             await handleStreamResponse(userMessage)
         }
@@ -325,9 +325,9 @@ const VoiceAICustomerInterface: React.FC = () => {
     }, [])
 
     return (
-        <div className="flex flex-1 flex-col">
+        <div className="flex flex-1 flex-col overflow-hidden">
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-6">
+            <div className="flex-1 overflow-y-auto p-6 h-full">
                 {messages.length === 0 ? (
                     <div className="flex h-full flex-col items-center justify-center text-center">
                         <div className="mb-4 flex size-16 items-center justify-center rounded-full bg-purple-600 text-white text-shadow-2xs text-shadow-purple-950">
@@ -350,21 +350,7 @@ const VoiceAICustomerInterface: React.FC = () => {
                                 />
                                 {msg.isStreaming && (
                                     <div className="mt-2 flex items-center gap-2 text-sm text-gray-500">
-                                        <div className="flex gap-1">
-                                            <div className="w-2 h-2 bg-purple-600 rounded-full animate-pulse"></div>
-                                            <div
-                                                className="w-2 h-2 bg-purple-600 rounded-full animate-pulse"
-                                                style={{
-                                                    animationDelay: '0.2s',
-                                                }}
-                                            ></div>
-                                            <div
-                                                className="w-2 h-2 bg-purple-600 rounded-full animate-pulse"
-                                                style={{
-                                                    animationDelay: '0.4s',
-                                                }}
-                                            ></div>
-                                        </div>
+                                        <MessageLoading size="size-2" />
                                         <span>Assistant is typing...</span>
                                     </div>
                                 )}
@@ -418,17 +404,7 @@ const VoiceAICustomerInterface: React.FC = () => {
 
                     {isStreaming && (
                         <div className="mt-2 text-sm text-gray-500 flex items-center gap-2">
-                            <div className="flex gap-1">
-                                <div className="w-1 h-1 bg-purple-600 rounded-full animate-pulse"></div>
-                                <div
-                                    className="w-1 h-1 bg-purple-600 rounded-full animate-pulse"
-                                    style={{ animationDelay: '0.2s' }}
-                                ></div>
-                                <div
-                                    className="w-1 h-1 bg-purple-600 rounded-full animate-pulse"
-                                    style={{ animationDelay: '0.4s' }}
-                                ></div>
-                            </div>
+                            <MessageLoading />
                             <span>Processing your message...</span>
                         </div>
                     )}

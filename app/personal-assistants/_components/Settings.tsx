@@ -418,7 +418,7 @@ const AgentsSettings: React.FC = () => {
 
     if (isLoading) {
         return (
-            <div className="min-h-screen bg-background text-foreground p-6">
+            <div className="size-full bg-background text-foreground p-6">
                 <div className="max-w-4xl mx-auto">
                     <div className="text-center py-20">
                         <div className="w-20 h-20 bg-secondary rounded-full flex items-center justify-center mx-auto mb-6">
@@ -438,21 +438,19 @@ const AgentsSettings: React.FC = () => {
 
     if (error) {
         return (
-            <div>
-                <div className="min-h-screen bg-background text-foreground p-6">
-                    <div className="max-w-4xl mx-auto">
-                        <div className="text-center py-20">
-                            <div className="w-20 h-20 bg-destructive/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                                <Bot className="w-10 h-10 text-destructive" />
-                            </div>
-                            <h2 className="text-xl font-bold mb-2 text-destructive">
-                                Error Loading Agents
-                            </h2>
-                            <p className="text-muted-foreground">
-                                There was an error loading your agents. Please
-                                try again.
-                            </p>
+            <div className="size-full bg-background text-foreground p-6">
+                <div className="max-w-4xl mx-auto">
+                    <div className="text-center py-20">
+                        <div className="w-20 h-20 bg-destructive/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <Bot className="w-10 h-10 text-destructive" />
                         </div>
+                        <h2 className="text-xl font-bold mb-2 text-destructive">
+                            Error Loading Agents
+                        </h2>
+                        <p className="text-muted-foreground">
+                            There was an error loading your agents. Please try
+                            again.
+                        </p>
                     </div>
                 </div>
             </div>
@@ -461,31 +459,29 @@ const AgentsSettings: React.FC = () => {
 
     if (!selectedAgent || agents.length === 0) {
         return (
-            <div>
-                <div className="min-h-screen bg-background text-foreground p-6">
-                    <div className="max-w-4xl mx-auto">
-                        <div className="text-center py-20">
-                            <div className="w-20 h-20 bg-secondary rounded-full flex items-center justify-center mx-auto mb-6">
-                                <Bot className="w-10 h-10 text-muted-foreground" />
-                            </div>
-                            <h2 className="text-2xl font-bold mb-4">
-                                {agents.length === 0
-                                    ? 'No Agents Found'
-                                    : 'No Personal Assistant Selected'}
-                            </h2>
-                            <p className="text-muted-foreground mb-8">
-                                {agents.length === 0
-                                    ? 'Create your first agent to get started'
-                                    : 'Select an existing agent or create a new one to get started'}
-                            </p>
-                            <AgentSelector
-                                agents={agents}
-                                selectedAgent={null}
-                                selectedColor={selectedColor}
-                                onSelectAgent={setSelectedAgent}
-                                onCreateNew={handleCreateNew}
-                            />
+            <div className="size-full bg-background text-foreground p-6">
+                <div className="max-w-4xl mx-auto">
+                    <div className="text-center py-20">
+                        <div className="size-20 bg-secondary rounded-full flex items-center justify-center mx-auto mb-6">
+                            <Bot className="w-10 h-10 text-muted-foreground" />
                         </div>
+                        <h2 className="text-2xl font-bold mb-4">
+                            {agents.length === 0
+                                ? 'No Agents Found'
+                                : 'No Personal Assistant Selected'}
+                        </h2>
+                        <p className="text-muted-foreground mb-8">
+                            {agents.length === 0
+                                ? 'Create your first agent to get started'
+                                : 'Select an existing agent or create a new one to get started'}
+                        </p>
+                        <AgentSelector
+                            agents={agents}
+                            selectedAgent={null}
+                            selectedColor={selectedColor}
+                            onSelectAgent={setSelectedAgent}
+                            onCreateNew={handleCreateNew}
+                        />
                     </div>
                 </div>
             </div>
@@ -493,368 +489,348 @@ const AgentsSettings: React.FC = () => {
     }
 
     return (
-        <div>
-            <div className="min-h-screen size-full bg-background text-foreground p-6">
-                <div className="flex flex-wrap gap-6 justify-between items-center mb-8">
-                    <div className="flex items-center gap-4">
-                        <div
-                            className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center"
-                            style={{ backgroundColor: selectedColor }}
-                        >
-                            <Brain className="w-6 h-6 text-primary-foreground" />
-                        </div>
-                        <div>
-                            <h2 className="text-2xl font-bold">
-                                {selectedAgent.name}
-                            </h2>
-                            <p className="text-muted-foreground">
-                                {selectedAgent.description}
-                            </p>
-                        </div>
+        <div className=" size-full bg-background text-foreground p-6">
+            <div className="flex flex-wrap gap-6 justify-between items-center mb-8">
+                <div className="flex items-center gap-4">
+                    <div
+                        className="size-12 bg-primary rounded-lg flex items-center justify-center"
+                        style={{ backgroundColor: selectedColor }}
+                    >
+                        <Brain className="size-6 text-primary-foreground" />
                     </div>
-                    <div className="flex items-center gap-3">
-                        <div className="w-full max-w-56">
-                            <AgentSelector
-                                agents={agents}
-                                selectedAgent={selectedAgent}
-                                onSelectAgent={setSelectedAgent}
-                                onCreateNew={handleCreateNew}
-                                selectedColor={selectedColor}
-                            />
-                        </div>
-                        <Button
-                            variant={'default'}
-                            size={'lg'}
-                            className="font-bold"
-                            style={{
-                                backgroundColor: selectedColor,
-                                padding: `0 20px`,
-                            }}
-                        >
-                            <Save className="size-5 stroke-2" />
-                            Save Configuration
-                        </Button>
+                    <div>
+                        <h2 className="text-2xl font-bold">
+                            {selectedAgent.name}
+                        </h2>
+                        <p className="text-muted-foreground">
+                            {selectedAgent.description}
+                        </p>
                     </div>
                 </div>
+                <div className="flex items-center gap-3">
+                    <div className="w-full max-w-56">
+                        <AgentSelector
+                            agents={agents}
+                            selectedAgent={selectedAgent}
+                            onSelectAgent={setSelectedAgent}
+                            onCreateNew={handleCreateNew}
+                            selectedColor={selectedColor}
+                        />
+                    </div>
+                    <Button
+                        variant={'default'}
+                        size={'lg'}
+                        className="font-bold"
+                        style={{
+                            backgroundColor: selectedColor,
+                            padding: `0 20px`,
+                        }}
+                    >
+                        <Save className="size-5 stroke-2" />
+                        Save Configuration
+                    </Button>
+                </div>
+            </div>
 
-                <div className="size-full lg:grid lg:grid-cols-12 gap-6">
-                    <div className="lg:col-span-8">
-                        <div className="bg-card border border-border rounded-lg p-6">
-                            <div className="flex gap-2 mb-6">
-                                <TabButton
-                                    id="personality"
-                                    label="Personality"
-                                    icon={Users}
-                                    selectedColor={selectedColor}
-                                    active={activeTab === 'personality'}
-                                    onClick={() => setActiveTab('personality')}
-                                />
-                                <TabButton
-                                    id="knowledge"
-                                    label="Knowledge Base"
-                                    icon={BarChart3}
-                                    selectedColor={selectedColor}
-                                    active={activeTab === 'knowledge'}
-                                    onClick={() => setActiveTab('knowledge')}
-                                />
-                                <TabButton
-                                    id="tools"
-                                    label="Tools & Skills"
-                                    selectedColor={selectedColor}
-                                    icon={Zap}
-                                    active={activeTab === 'tools'}
-                                    onClick={() => setActiveTab('tools')}
-                                />
-                                <TabButton
-                                    id="advanced"
-                                    label="Advanced"
-                                    selectedColor={selectedColor}
-                                    icon={Settings}
-                                    active={activeTab === 'advanced'}
-                                    onClick={() => setActiveTab('advanced')}
-                                />
-                            </div>
+            <div className="size-full lg:grid lg:grid-cols-12 gap-6">
+                <div className="lg:col-span-8">
+                    <div className="bg-card border border-border rounded-lg p-6">
+                        <div className="flex gap-2 mb-6">
+                            <TabButton
+                                id="personality"
+                                label="Personality"
+                                icon={Users}
+                                selectedColor={selectedColor}
+                                active={activeTab === 'personality'}
+                                onClick={() => setActiveTab('personality')}
+                            />
+                            <TabButton
+                                id="knowledge"
+                                label="Knowledge Base"
+                                icon={BarChart3}
+                                selectedColor={selectedColor}
+                                active={activeTab === 'knowledge'}
+                                onClick={() => setActiveTab('knowledge')}
+                            />
+                            <TabButton
+                                id="tools"
+                                label="Tools & Skills"
+                                selectedColor={selectedColor}
+                                icon={Zap}
+                                active={activeTab === 'tools'}
+                                onClick={() => setActiveTab('tools')}
+                            />
+                            <TabButton
+                                id="advanced"
+                                label="Advanced"
+                                selectedColor={selectedColor}
+                                icon={Settings}
+                                active={activeTab === 'advanced'}
+                                onClick={() => setActiveTab('advanced')}
+                            />
+                        </div>
 
-                            {activeTab === 'personality' && (
-                                <div className="space-y-6">
-                                    <div>
-                                        <h3 className="font-medium mb-4">
-                                            Agent Identity
-                                        </h3>
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div>
-                                                <label className="block text-sm font-medium mb-2">
-                                                    Icon
-                                                </label>
-                                                <div className="flex gap-2">
-                                                    {iconOptions.map(
-                                                        ({
-                                                            id,
-                                                            icon: Icon,
-                                                        }) => (
-                                                            <button
-                                                                key={id}
-                                                                onClick={() =>
-                                                                    setSelectedIcon(
-                                                                        id
-                                                                    )
-                                                                }
-                                                                className={`p-2 rounded border-2 transition-colors ${
-                                                                    selectedIcon ===
-                                                                    id
-                                                                        ? 'border-primary bg-primary/20'
-                                                                        : 'border-border hover:border-primary/50'
-                                                                }`}
-                                                                style={
-                                                                    selectedIcon ===
-                                                                    id
-                                                                        ? {
-                                                                              borderColor:
-                                                                                  selectedColor,
-                                                                              background: `${selectedColor}33`,
-                                                                          }
-                                                                        : undefined
-                                                                }
-                                                            >
-                                                                <Icon
-                                                                    size={20}
-                                                                />
-                                                            </button>
-                                                        )
-                                                    )}
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <label className="block text-sm font-medium mb-2">
-                                                    Color Theme
-                                                </label>
-                                                <div className="flex gap-2">
-                                                    {colorOptions.map(
-                                                        (color) => (
-                                                            <button
-                                                                key={color}
-                                                                onClick={() =>
-                                                                    handleThemeManagement(
-                                                                        color
-                                                                    )
-                                                                }
-                                                                className={`w-8 h-8 rounded border-2 transition-all ${
-                                                                    selectedColor ===
-                                                                    color
-                                                                        ? 'border-foreground scale-110'
-                                                                        : 'border-border hover:border-foreground/50'
-                                                                }`}
-                                                                style={{
-                                                                    backgroundColor:
-                                                                        color,
-                                                                }}
-                                                            />
-                                                        )
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <h3 className="font-medium mb-4">
-                                            Personality Traits
-                                        </h3>
-                                        <div className="flex flex-wrap gap-2 mb-3">
-                                            {personalityTraits.map((trait) => (
-                                                <span
-                                                    key={trait}
-                                                    className="px-3 py-1 bg-primary/20 text-primary rounded-full text-sm flex items-center gap-1"
-                                                    style={{
-                                                        background: `${selectedColor}88`,
-                                                    }}
-                                                >
-                                                    {trait}
-                                                    <button
-                                                        onClick={() =>
-                                                            removeTrait(trait)
-                                                        }
-                                                        className="hover:text-destructive"
-                                                    >
-                                                        ×
-                                                    </button>
-                                                </span>
-                                            ))}
-                                        </div>
-                                        <div className="mb-4">
-                                            <p className="text-sm text-muted-foreground mb-2">
-                                                Suggested traits:
-                                            </p>
-                                            <div className="flex flex-wrap gap-2">
-                                                {suggestedTraits.map(
-                                                    (trait) => (
+                        {activeTab === 'personality' && (
+                            <div className="space-y-6">
+                                <div>
+                                    <h3 className="font-medium mb-4">
+                                        Agent Identity
+                                    </h3>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium mb-2">
+                                                Icon
+                                            </label>
+                                            <div className="flex gap-2">
+                                                {iconOptions.map(
+                                                    ({ id, icon: Icon }) => (
                                                         <button
-                                                            key={trait}
+                                                            key={id}
                                                             onClick={() =>
-                                                                addTrait(trait)
+                                                                setSelectedIcon(
+                                                                    id
+                                                                )
                                                             }
-                                                            style={{
-                                                                background: `${selectedColor}22`,
-                                                            }}
-                                                            className="px-3 py-1 bg-secondary hover:bg-secondary/80 text-secondary-foreground rounded-full text-sm transition-colors"
+                                                            className={`p-2 rounded border-2 transition-colors ${
+                                                                selectedIcon ===
+                                                                id
+                                                                    ? 'border-primary bg-primary/20'
+                                                                    : 'border-border hover:border-primary/50'
+                                                            }`}
+                                                            style={
+                                                                selectedIcon ===
+                                                                id
+                                                                    ? {
+                                                                          borderColor:
+                                                                              selectedColor,
+                                                                          background: `${selectedColor}33`,
+                                                                      }
+                                                                    : undefined
+                                                            }
                                                         >
-                                                            + {trait}
+                                                            <Icon size={20} />
                                                         </button>
                                                     )
                                                 )}
                                             </div>
                                         </div>
-                                    </div>
-
-                                    <div>
-                                        <h3 className="font-medium mb-4">
-                                            Personality Sliders
-                                        </h3>
-                                        <SliderComponent
-                                            selectedColor={selectedColor}
-                                            label="🎭 Formality"
-                                            value={personalitySliders.formality}
-                                            onChange={(value) =>
-                                                updateSlider('formality', value)
-                                            }
-                                            percentage={
-                                                personalitySliders.formality
-                                            }
-                                        />
-                                        <SliderComponent
-                                            selectedColor={selectedColor}
-                                            label="❤️ Empathy"
-                                            value={personalitySliders.empathy}
-                                            onChange={(value) =>
-                                                updateSlider('empathy', value)
-                                            }
-                                            percentage={
-                                                personalitySliders.empathy
-                                            }
-                                        />
-                                        <SliderComponent
-                                            selectedColor={selectedColor}
-                                            label="😊 Humor"
-                                            value={personalitySliders.humor}
-                                            onChange={(value) =>
-                                                updateSlider('humor', value)
-                                            }
-                                            percentage={
-                                                personalitySliders.humor
-                                            }
-                                        />
-                                        <SliderComponent
-                                            selectedColor={selectedColor}
-                                            label="🗣️ Verbosity"
-                                            value={personalitySliders.verbosity}
-                                            onChange={(value) =>
-                                                updateSlider('verbosity', value)
-                                            }
-                                            percentage={
-                                                personalitySliders.verbosity
-                                            }
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <h3 className="font-medium mb-4">
-                                            Communication Tone
-                                        </h3>
-                                        <select
-                                            value={communicationTone}
-                                            onChange={(e) =>
-                                                setCommunicationTone(
-                                                    e.target
-                                                        .value as CommunicationTone
-                                                )
-                                            }
-                                            className="w-full p-3 bg-background border border-border rounded-lg focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-                                        >
-                                            <option value="Professional">
-                                                Professional
-                                            </option>
-                                            <option value="Casual">
-                                                Casual
-                                            </option>
-                                            <option value="Friendly">
-                                                Friendly
-                                            </option>
-                                            <option value="Formal">
-                                                Formal
-                                            </option>
-                                            <option value="Conversational">
-                                                Conversational
-                                            </option>
-                                        </select>
+                                        <div>
+                                            <label className="block text-sm font-medium mb-2">
+                                                Color Theme
+                                            </label>
+                                            <div className="flex gap-2">
+                                                {colorOptions.map((color) => (
+                                                    <button
+                                                        key={color}
+                                                        onClick={() =>
+                                                            handleThemeManagement(
+                                                                color
+                                                            )
+                                                        }
+                                                        className={`w-8 h-8 rounded border-2 transition-all ${
+                                                            selectedColor ===
+                                                            color
+                                                                ? 'border-foreground scale-110'
+                                                                : 'border-border hover:border-foreground/50'
+                                                        }`}
+                                                        style={{
+                                                            backgroundColor:
+                                                                color,
+                                                        }}
+                                                    />
+                                                ))}
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                            )}
 
-                            {activeTab !== 'personality' && (
-                                <div className="text-center py-12 text-muted-foreground">
-                                    <Settings
-                                        size={48}
-                                        className="mx-auto mb-4 opacity-50"
+                                <div>
+                                    <h3 className="font-medium mb-4">
+                                        Personality Traits
+                                    </h3>
+                                    <div className="flex flex-wrap gap-2 mb-3">
+                                        {personalityTraits.map((trait) => (
+                                            <span
+                                                key={trait}
+                                                className="px-3 py-1 bg-primary/20 text-primary rounded-full text-sm flex items-center gap-1"
+                                                style={{
+                                                    background: `${selectedColor}88`,
+                                                }}
+                                            >
+                                                {trait}
+                                                <button
+                                                    onClick={() =>
+                                                        removeTrait(trait)
+                                                    }
+                                                    className="hover:text-destructive"
+                                                >
+                                                    ×
+                                                </button>
+                                            </span>
+                                        ))}
+                                    </div>
+                                    <div className="mb-4">
+                                        <p className="text-sm text-muted-foreground mb-2">
+                                            Suggested traits:
+                                        </p>
+                                        <div className="flex flex-wrap gap-2">
+                                            {suggestedTraits.map((trait) => (
+                                                <button
+                                                    key={trait}
+                                                    onClick={() =>
+                                                        addTrait(trait)
+                                                    }
+                                                    style={{
+                                                        background: `${selectedColor}22`,
+                                                    }}
+                                                    className="px-3 py-1 bg-secondary hover:bg-secondary/80 text-secondary-foreground rounded-full text-sm transition-colors"
+                                                >
+                                                    + {trait}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <h3 className="font-medium mb-4">
+                                        Personality Sliders
+                                    </h3>
+                                    <SliderComponent
+                                        selectedColor={selectedColor}
+                                        label="🎭 Formality"
+                                        value={personalitySliders.formality}
+                                        onChange={(value) =>
+                                            updateSlider('formality', value)
+                                        }
+                                        percentage={
+                                            personalitySliders.formality
+                                        }
                                     />
-                                    <p>
-                                        Configuration for {activeTab} coming
-                                        soon...
-                                    </p>
+                                    <SliderComponent
+                                        selectedColor={selectedColor}
+                                        label="❤️ Empathy"
+                                        value={personalitySliders.empathy}
+                                        onChange={(value) =>
+                                            updateSlider('empathy', value)
+                                        }
+                                        percentage={personalitySliders.empathy}
+                                    />
+                                    <SliderComponent
+                                        selectedColor={selectedColor}
+                                        label="😊 Humor"
+                                        value={personalitySliders.humor}
+                                        onChange={(value) =>
+                                            updateSlider('humor', value)
+                                        }
+                                        percentage={personalitySliders.humor}
+                                    />
+                                    <SliderComponent
+                                        selectedColor={selectedColor}
+                                        label="🗣️ Verbosity"
+                                        value={personalitySliders.verbosity}
+                                        onChange={(value) =>
+                                            updateSlider('verbosity', value)
+                                        }
+                                        percentage={
+                                            personalitySliders.verbosity
+                                        }
+                                    />
                                 </div>
-                            )}
+
+                                <div>
+                                    <h3 className="font-medium mb-4">
+                                        Communication Tone
+                                    </h3>
+                                    <select
+                                        value={communicationTone}
+                                        onChange={(e) =>
+                                            setCommunicationTone(
+                                                e.target
+                                                    .value as CommunicationTone
+                                            )
+                                        }
+                                        className="w-full p-3 bg-background border border-border rounded-lg focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                    >
+                                        <option value="Professional">
+                                            Professional
+                                        </option>
+                                        <option value="Casual">Casual</option>
+                                        <option value="Friendly">
+                                            Friendly
+                                        </option>
+                                        <option value="Formal">Formal</option>
+                                        <option value="Conversational">
+                                            Conversational
+                                        </option>
+                                    </select>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab !== 'personality' && (
+                            <div className="text-center py-12 text-muted-foreground">
+                                <Settings
+                                    size={48}
+                                    className="mx-auto mb-4 opacity-50"
+                                />
+                                <p>
+                                    Configuration for {activeTab} coming soon...
+                                </p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                <div className="lg:col-span-4 space-y-4">
+                    <div className="bg-card border border-border rounded-lg p-4">
+                        <h3 className="font-medium mb-3 flex items-center gap-2">
+                            <Play size={16} />
+                            Test Agent
+                        </h3>
+                        <div className="space-y-3">
+                            <div>
+                                <label className="block text-sm font-medium mb-2">
+                                    Test Input
+                                </label>
+                                <textarea
+                                    value={testInput}
+                                    onChange={(e) =>
+                                        setTestInput(e.target.value)
+                                    }
+                                    placeholder="Enter a test message..."
+                                    className="w-full p-3 bg-background border border-border rounded-lg focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
+                                    rows={3}
+                                />
+                            </div>
+                            <Button
+                                className="w-full bg-green-600 hover:bg-green-700 "
+                                variant="success"
+                            >
+                                Test Response
+                            </Button>
                         </div>
                     </div>
 
-                    <div className="lg:col-span-4 space-y-4">
-                        <div className="bg-card border border-border rounded-lg p-4">
-                            <h3 className="font-medium mb-3 flex items-center gap-2">
-                                <Play size={16} />
-                                Test Agent
-                            </h3>
-                            <div className="space-y-3">
-                                <div>
-                                    <label className="block text-sm font-medium mb-2">
-                                        Test Input
-                                    </label>
-                                    <textarea
-                                        value={testInput}
-                                        onChange={(e) =>
-                                            setTestInput(e.target.value)
-                                        }
-                                        placeholder="Enter a test message..."
-                                        className="w-full p-3 bg-background border border-border rounded-lg focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
-                                        rows={3}
-                                    />
-                                </div>
-                                <Button
-                                    className="w-full bg-green-600 hover:bg-green-700 "
-                                    variant="success"
-                                >
-                                    Test Response
-                                </Button>
-                            </div>
-                        </div>
-
-                        <div className="bg-card border border-border rounded-lg p-4">
-                            <h3 className="font-medium mb-3">Quick Actions</h3>
-                            <div className="space-y-2">
-                                <button className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-accent rounded transition-colors">
-                                    <Download size={16} />
-                                    <span>Export Configuration</span>
-                                </button>
-                                <button className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-accent rounded transition-colors">
-                                    <Upload size={16} />
-                                    <span>Import Configuration</span>
-                                </button>
-                                <button className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-accent rounded transition-colors">
-                                    <RotateCcw size={16} />
-                                    <span>Reset to Defaults</span>
-                                </button>
-                                <button className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-accent rounded transition-colors">
-                                    <Clock size={16} />
-                                    <span>Version History</span>
-                                </button>
-                            </div>
+                    <div className="bg-card border border-border rounded-lg p-4">
+                        <h3 className="font-medium mb-3">Quick Actions</h3>
+                        <div className="space-y-2">
+                            <button className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-accent rounded transition-colors">
+                                <Download size={16} />
+                                <span>Export Configuration</span>
+                            </button>
+                            <button className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-accent rounded transition-colors">
+                                <Upload size={16} />
+                                <span>Import Configuration</span>
+                            </button>
+                            <button className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-accent rounded transition-colors">
+                                <RotateCcw size={16} />
+                                <span>Reset to Defaults</span>
+                            </button>
+                            <button className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-accent rounded transition-colors">
+                                <Clock size={16} />
+                                <span>Version History</span>
+                            </button>
                         </div>
                     </div>
                 </div>
