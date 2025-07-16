@@ -13,15 +13,9 @@ import {
     Users,
     Zap,
     Brain,
-    Edit,
-    Trash2,
     Plus,
     Search,
-    MoreVertical,
     ChevronDown,
-    LucideIcon,
-    Moon,
-    Sun,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { setStorageItem } from '@/utils/localstorageAccess'
@@ -32,21 +26,17 @@ import Select from '@/components/inputs/select-input'
 import type {
     Agent,
     PersonalityTraits,
-    AgentProperties,
-    AgentConfig,
-    VoiceSettings,
-    AgentType,
     UpdateAgentRequest,
+    CommunicationTone,
 } from '@/types/agent'
-import { Input } from '@/components/ui/input'
+
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/utils/cn'
 import { Label } from '@radix-ui/react-label'
-import { FormMessages } from '@/components/MessageInfo'
 import { useAgents } from '@/hooks/api/use-agents'
 import Loader from '@/components/Loader'
 
-// Temporary mock implementation of useAgents hook
+//FIXME: Temporary mock implementation of useAgents hook
 const useMockAgents = (params: { skip?: number; limit?: number } = {}) => {
     const mockAgents: Agent[] = [
         {
@@ -229,12 +219,6 @@ interface AgentCardProps {
 }
 
 type TabType = 'personality' | 'knowledge' | 'tools' | 'advanced'
-type CommunicationTone =
-    | 'Professional'
-    | 'Casual'
-    | 'Friendly'
-    | 'Formal'
-    | 'Conversational'
 
 // Theme context
 const ThemeContext = React.createContext<{
@@ -251,6 +235,10 @@ const communicationTones: CommunicationTone[] = [
     'Friendly',
     'Formal',
     'Conversational',
+    'Friendly and professional',
+    'Professional and helpful',
+    'Inspiring and encouraging',
+    'Professional and precise',
 ]
 
 // Helper function to convert personality traits to sliders
@@ -401,7 +389,6 @@ const AgentSelector: React.FC<{
 }
 
 const AgentsSettings: React.FC = () => {
-    // Fetch agents using the provided hook
     const { data, isLoading, error } = useAgents()
 
     const agents = data?.data || []
@@ -475,6 +462,7 @@ const AgentsSettings: React.FC = () => {
                 title: firstAgent.name,
                 description: firstAgent.description,
             })
+            setCommunicationTone(firstAgent.agent_properties.tone)
             loadAgentData(firstAgent)
         }
     }, [agents, selectedAgent])
@@ -990,6 +978,7 @@ const AgentsSettings: React.FC = () => {
 
                                 <div className="w-full">
                                     <Select
+                                        value={communicationTone}
                                         onValueChange={(value) =>
                                             setCommunicationTone(
                                                 value as CommunicationTone

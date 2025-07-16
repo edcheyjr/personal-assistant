@@ -1,4 +1,17 @@
-// types.ts
+//unions
+
+export type CommunicationTone =
+    | 'Professional'
+    | 'Casual'
+    | 'Friendly'
+    | 'Formal'
+    | 'Conversational'
+    | 'Friendly and professional'
+    | 'Professional and helpful'
+    | 'Inspiring and encouraging'
+    | 'Professional and precise'
+
+//interfaces
 export interface ValidationError {
     detail: Array<{
         loc: (string | number)[]
@@ -21,7 +34,7 @@ export interface PersonalityTraits {
 
 export interface AgentProperties {
     name: string
-    tone: string
+    tone: CommunicationTone
     objective: string
     socratic_approach: string | boolean
     conversation_style: string

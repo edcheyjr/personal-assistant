@@ -15,6 +15,7 @@ import {
 import React, { useState } from 'react'
 import { cn } from '@/utils/cn'
 import { signOut } from 'next-auth/react'
+import { useAgents } from '@/hooks/api/use-agents'
 
 type Props = {
     sidebarOpen: boolean
@@ -37,6 +38,8 @@ const SideMenuBar = ({
     toggleSidebar,
 }: Props) => {
     const [loading, setLoading] = useState(false)
+    const { data, isLoading, error } = useAgents()
+    const agents = Array.isArray(data?.data) ? data.data : []
 
     const handleSignOut = async () => {
         setLoading(false)
@@ -124,7 +127,7 @@ const SideMenuBar = ({
                                 Total Agents
                             </span>
                             <span className="font-medium text-foreground">
-                                6
+                                {agents.length}
                             </span>
                         </div>
                         <div className="flex justify-between items-center">
@@ -132,17 +135,17 @@ const SideMenuBar = ({
                                 Active Agents
                             </span>
                             <span className="font-medium text-foreground">
-                                6
+                                {agents.length}
                             </span>
                         </div>
-                        <div className="flex justify-between items-center">
+                        {/* <div className="flex justify-between items-center">
                             <span className="text-muted-foreground">
                                 Agent Groups
                             </span>
                             <span className="font-medium text-foreground">
                                 2
                             </span>
-                        </div>
+                        </div> */}
                         <div className="flex justify-between items-center">
                             <span className="text-muted-foreground">
                                 System Status
