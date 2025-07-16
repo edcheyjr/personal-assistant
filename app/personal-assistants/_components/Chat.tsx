@@ -41,7 +41,6 @@ const VoiceAICustomerInterface: React.FC = () => {
     useEffect(() => {
         scrollToBottom()
     }, [messages])
-
     const handleStreamResponse = async (userMessage: string) => {
         // Cancel any existing stream
         if (abortControllerRef.current) {
@@ -61,6 +60,7 @@ const VoiceAICustomerInterface: React.FC = () => {
                 // thread_id: threadId,
                 agent_id: '7701aaeb-b495-44cd-81f4-0307bbbeefcc',
             })
+
             if (typeof stream == 'string' || error || status !== 200) {
                 const errorMessage: StreamingMessage = {
                     id: Date.now(),
@@ -79,9 +79,11 @@ const VoiceAICustomerInterface: React.FC = () => {
                 toast.error(error)
                 return
             }
+
             if (!stream) {
                 return
             }
+
             const reader = stream.getReader()
             const decoder = new TextDecoder()
 
@@ -90,12 +92,19 @@ const VoiceAICustomerInterface: React.FC = () => {
             let streamingContent = ''
             let streamingMessageId: number | null = null
 
+            // Buffer to handle incomplete JSON
+            let buffer = ''
+
             while (true) {
                 const { done, value } = await reader.read()
                 if (done) break
 
                 const chunk = decoder.decode(value, { stream: true })
-                const lines = chunk.split('\n')
+                buffer += chunk
+
+                // Split by lines, but keep the last incomplete line in the buffer
+                const lines = buffer.split('\n')
+                buffer = lines.pop() || '' // Keep the last (potentially incomplete) line
 
                 for (const line of lines) {
                     if (line.startsWith('event: agent_event')) {
@@ -103,10 +112,15 @@ const VoiceAICustomerInterface: React.FC = () => {
                     }
 
                     if (line.startsWith('data: ')) {
+                        const jsonString = line.slice(6).trim()
+
+                        // Skip empty data lines
+                        if (!jsonString) {
+                            continue
+                        }
+
                         try {
-                            const eventData: AgentEvent = JSON.parse(
-                                line.slice(6)
-                            )
+                            const eventData: AgentEvent = JSON.parse(jsonString)
 
                             // Handle different event types
                             if (
@@ -230,8 +244,14 @@ const VoiceAICustomerInterface: React.FC = () => {
                                     }
                                 }
                             }
-                        } catch (error) {
-                            console.error('Error parsing stream data:', error)
+                        } catch (parseError) {
+                            console.warn(
+                                'Failed to parse JSON line:',
+                                jsonString
+                            )
+                            console.warn('Parse error:', parseError)
+                            // Continue processing other lines instead of breaking
+                            continue
                         }
                     }
 
@@ -239,6 +259,24 @@ const VoiceAICustomerInterface: React.FC = () => {
                         // Stream completed
                         setIsStreaming(false)
                         return
+                    }
+                }
+            }
+
+            // Process any remaining buffer content
+            if (buffer.trim()) {
+                if (buffer.startsWith('data: ')) {
+                    const jsonString = buffer.slice(6).trim()
+                    if (jsonString) {
+                        try {
+                            const eventData: AgentEvent = JSON.parse(jsonString)
+                            // Handle the final event if needed
+                        } catch (parseError) {
+                            console.warn(
+                                'Failed to parse final buffer JSON:',
+                                jsonString
+                            )
+                        }
                     }
                 }
             }
