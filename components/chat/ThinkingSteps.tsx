@@ -13,19 +13,24 @@ export const ThinkingStep: React.FC<{ step: AgentEvent }> = ({ step }) => {
     let icon = '🔄'
 
     if (step.event === 'on_tool_start' || step.event === 'on_tool_end') {
-        stepTypeClass = 'bg-blue-100 text-blue-800'
+        stepTypeClass =
+            'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
         icon = '🛠️'
     } else if (step.event === 'on_chain_start') {
-        stepTypeClass = 'bg-purple-100 text-purple-800'
+        stepTypeClass =
+            'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
         icon = '⏩'
     } else if (step.event === 'on_chain_end') {
-        stepTypeClass = 'bg-green-100 text-green-800'
+        stepTypeClass =
+            'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
         icon = '✅'
     } else if (step.event === 'on_chat_model_start') {
-        stepTypeClass = 'bg-yellow-100 text-yellow-800'
+        stepTypeClass =
+            'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
         icon = '💭'
     } else if (step.event === 'on_chat_model_stream') {
-        stepTypeClass = 'bg-indigo-100 text-indigo-800'
+        stepTypeClass =
+            'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200'
         icon = '✍️'
     }
 
@@ -56,7 +61,7 @@ export const ThinkingStep: React.FC<{ step: AgentEvent }> = ({ step }) => {
                     <div className="text-xs font-medium text-gray-500 mb-1">
                         Input:
                     </div>
-                    <pre className="text-xs bg-gray-50 p-2 rounded overflow-x-auto">
+                    <pre className="text-xs bg-card p-2 rounded overflow-x-auto">
                         {JSON.stringify(step.data.input, null, 2)}
                     </pre>
                 </div>
@@ -67,7 +72,7 @@ export const ThinkingStep: React.FC<{ step: AgentEvent }> = ({ step }) => {
                     <div className="text-xs font-medium text-gray-500 mb-1">
                         Output:
                     </div>
-                    <pre className="text-xs bg-gray-50 p-2 rounded overflow-x-auto">
+                    <pre className="text-xs bg-card p-2 rounded overflow-x-auto">
                         {JSON.stringify(step.data.output, null, 2)}
                     </pre>
                 </div>
@@ -78,7 +83,7 @@ export const ThinkingStep: React.FC<{ step: AgentEvent }> = ({ step }) => {
                     <div className="text-xs font-medium text-gray-500 mb-1">
                         Content:
                     </div>
-                    <div className="text-sm p-2 bg-gray-50 rounded">
+                    <div className="text-sm p-2 bg-card rounded">
                         {step.data.chunk}
                     </div>
                 </div>
@@ -98,11 +103,11 @@ export const ThinkingProcess: React.FC<{ steps: AgentEvent[] }> = ({
 
     return (
         <Collapsible open={isOpen} onOpenChange={setIsOpen} className="mt-3">
-            <CollapsibleTrigger className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900">
+            <CollapsibleTrigger className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900n">
                 {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                 <span>Thinking Process ({steps.length} steps)</span>
             </CollapsibleTrigger>
-            <CollapsibleContent className="mt-2 pl-4 border-l-2 border-gray-200">
+            <CollapsibleContent className="mt-2 pl-4 border-l-2">
                 <div className="space-y-2">
                     {steps.map((step, index) => (
                         <ThinkingStep key={index} step={step} />

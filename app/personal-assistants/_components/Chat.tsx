@@ -350,7 +350,7 @@ const VoiceAICustomerInterface: React.FC = () => {
     }, [])
 
     return (
-        <div className="flex flex-1 flex-col overflow-hidden">
+        <div className="flex flex-1 flex-col overflow-hidden max-h-[92vh] min[2048px]:max-h-[95vh]">
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-6 h-full">
                 {messages.length === 0 ? (
