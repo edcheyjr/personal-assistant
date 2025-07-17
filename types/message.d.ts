@@ -16,6 +16,8 @@ interface AgentEvent {
         | 'on_chain_end'
         | 'on_chat_model_stream'
         | 'on_chat_model_start'
+        | 'on_tool_start'
+        | 'on_tool_end'
     name: string
     run_id: string
     tags: string[]

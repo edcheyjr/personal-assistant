@@ -9,6 +9,7 @@ import { useParams } from 'next/navigation'
 import { streamAgentResponseAction } from '@/server-actions/agents'
 import { toast } from 'sonner'
 import MessageLoading from '@/components/chat/MessageLoading'
+import { ThinkingProcess } from '@/components/chat/ThinkingSteps'
 
 interface QuickGroup {
     name: string
@@ -18,6 +19,9 @@ interface QuickGroup {
 interface StreamingMessage extends Message {
     isStreaming?: boolean
     agentName?: string
+    thinkingSteps?: AgentEvent[]
+    toolCalls?: Map<string, any>
+    finalResponse?: string
 }
 
 const VoiceAICustomerInterface: React.FC = () => {
@@ -41,8 +45,8 @@ const VoiceAICustomerInterface: React.FC = () => {
     useEffect(() => {
         scrollToBottom()
     }, [messages])
+
     const handleStreamResponse = async (userMessage: string) => {
-        // Cancel any existing stream
         if (abortControllerRef.current) {
             abortControllerRef.current.abort()
         }
@@ -57,7 +61,6 @@ const VoiceAICustomerInterface: React.FC = () => {
                 status,
             } = await streamAgentResponseAction({
                 user_input: userMessage,
-                // thread_id: threadId,
                 agent_id: '7701aaeb-b495-44cd-81f4-0307bbbeefcc',
             })
 
@@ -91,8 +94,10 @@ const VoiceAICustomerInterface: React.FC = () => {
             let agentName = ''
             let streamingContent = ''
             let streamingMessageId: number | null = null
+            let thinkingSteps: AgentEvent[] = []
+            let toolCalls = new Map<string, any>()
+            let finalResponse = ''
 
-            // Buffer to handle incomplete JSON
             let buffer = ''
 
             while (true) {
@@ -102,9 +107,8 @@ const VoiceAICustomerInterface: React.FC = () => {
                 const chunk = decoder.decode(value, { stream: true })
                 buffer += chunk
 
-                // Split by lines, but keep the last incomplete line in the buffer
                 const lines = buffer.split('\n')
-                buffer = lines.pop() || '' // Keep the last (potentially incomplete) line
+                buffer = lines.pop() || ''
 
                 for (const line of lines) {
                     if (line.startsWith('event: agent_event')) {
@@ -114,27 +118,24 @@ const VoiceAICustomerInterface: React.FC = () => {
                     if (line.startsWith('data: ')) {
                         const jsonString = line.slice(6).trim()
 
-                        // Skip empty data lines
                         if (!jsonString) {
                             continue
                         }
 
                         try {
                             const eventData: AgentEvent = JSON.parse(jsonString)
+                            thinkingSteps.push(eventData)
 
-                            // Handle different event types
                             if (
                                 eventData.event === 'on_chain_start' &&
                                 eventData.name === 'LangGraph'
                             ) {
-                                // Extract agent name from the initial data
                                 agentName =
                                     eventData.data?.input?.agent_properties
                                         ?.name || 'AI Assistant'
                             }
 
                             if (eventData.event === 'on_chat_model_start') {
-                                // Start of AI response generation
                                 streamingContent = ''
                                 streamingMessageId = Date.now()
 
@@ -151,10 +152,10 @@ const VoiceAICustomerInterface: React.FC = () => {
                                     ),
                                     isStreaming: true,
                                     agentName: agentName || 'AI Assistant',
+                                    thinkingSteps: [...thinkingSteps],
                                 }
 
                                 setMessages((prev) => {
-                                    // Remove any existing streaming message and add the new one
                                     const withoutStreaming = prev.filter(
                                         (msg) => !msg.isStreaming
                                     )
@@ -166,7 +167,6 @@ const VoiceAICustomerInterface: React.FC = () => {
                             }
 
                             if (eventData.event === 'on_chat_model_stream') {
-                                // Handle streaming content chunks
                                 if (
                                     eventData.data?.chunk &&
                                     streamingMessageId
@@ -179,6 +179,9 @@ const VoiceAICustomerInterface: React.FC = () => {
                                                 return {
                                                     ...msg,
                                                     text: streamingContent,
+                                                    thinkingSteps: [
+                                                        ...thinkingSteps,
+                                                    ],
                                                 }
                                             }
                                             return msg
@@ -191,7 +194,6 @@ const VoiceAICustomerInterface: React.FC = () => {
                                 eventData.event === 'on_chain_end' &&
                                 eventData.name === 'LangGraph'
                             ) {
-                                // Process the final response
                                 const output = eventData.data?.output
                                 if (output?.messages) {
                                     const aiMessages = output.messages.filter(
@@ -206,12 +208,13 @@ const VoiceAICustomerInterface: React.FC = () => {
                                         latestAiMessage &&
                                         latestAiMessage.content
                                     ) {
-                                        // Create or update the agent message
+                                        finalResponse = latestAiMessage.content
+
                                         const agentMessage: StreamingMessage = {
                                             id:
                                                 streamingMessageId ||
                                                 Date.now(),
-                                            text: latestAiMessage.content,
+                                            text: finalResponse,
                                             sender: 'assistant',
                                             timestamp:
                                                 new Date().toLocaleTimeString(
@@ -226,10 +229,11 @@ const VoiceAICustomerInterface: React.FC = () => {
                                                 output.agent_name ||
                                                 agentName ||
                                                 'AI Assistant',
+                                            thinkingSteps: [...thinkingSteps],
+                                            finalResponse: finalResponse,
                                         }
 
                                         setMessages((prev) => {
-                                            // Remove any existing streaming message and add the final one
                                             const withoutStreaming =
                                                 prev.filter(
                                                     (msg) => !msg.isStreaming
@@ -250,27 +254,25 @@ const VoiceAICustomerInterface: React.FC = () => {
                                 jsonString
                             )
                             console.warn('Parse error:', parseError)
-                            // Continue processing other lines instead of breaking
                             continue
                         }
                     }
 
                     if (line.startsWith('event: completed')) {
-                        // Stream completed
                         setIsStreaming(false)
                         return
                     }
                 }
+                setIsStreaming(false)
             }
 
-            // Process any remaining buffer content
             if (buffer.trim()) {
                 if (buffer.startsWith('data: ')) {
                     const jsonString = buffer.slice(6).trim()
                     if (jsonString) {
                         try {
                             const eventData: AgentEvent = JSON.parse(jsonString)
-                            // Handle the final event if needed
+                            thinkingSteps.push(eventData)
                         } catch (parseError) {
                             console.warn(
                                 'Failed to parse final buffer JSON:',
@@ -285,7 +287,6 @@ const VoiceAICustomerInterface: React.FC = () => {
             console.error('Stream error:', error)
             setIsStreaming(false)
 
-            // Add error message
             const errorMessage: StreamingMessage = {
                 id: Date.now(),
                 text: "I'm sorry, I encountered an error. Please try again.",
@@ -317,19 +318,6 @@ const VoiceAICustomerInterface: React.FC = () => {
             const userMessage = message
             setMessage('')
 
-            //TODO: Add streaming indicator
-            // const streamingMessage: StreamingMessage = {
-            //     id: Date.now() + 1,
-            //     text: 'Thinking...',
-            //     sender: 'assistant',
-            //     timestamp: new Date().toLocaleTimeString([], {
-            //         hour: '2-digit',
-            //         minute: '2-digit',
-            //     }),
-            //     isStreaming: true,
-            // }
-            // setMessages((prev) => [...prev, streamingMessage])
-            // Handle the stream response
             await handleStreamResponse(userMessage)
         }
     }
@@ -353,7 +341,6 @@ const VoiceAICustomerInterface: React.FC = () => {
         { name: 'Creative Collective', active: false },
     ]
 
-    // Cleanup on unmount
     useEffect(() => {
         return () => {
             if (abortControllerRef.current) {
@@ -380,8 +367,8 @@ const VoiceAICustomerInterface: React.FC = () => {
                     </div>
                 ) : (
                     <div className="mx-auto max-w-4xl">
-                        {messages.map((msg) => (
-                            <div key={msg.id} className="mb-4">
+                        {messages.map((msg, index) => (
+                            <div key={msg.id + index} className="mb-4">
                                 <MessageComponent
                                     message={msg}
                                     isError={isError}
@@ -399,6 +386,12 @@ const VoiceAICustomerInterface: React.FC = () => {
                                             — {msg.agentName}
                                         </div>
                                     )}
+                                {msg.thinkingSteps &&
+                                    msg.sender === 'assistant' && (
+                                        <ThinkingProcess
+                                            steps={msg.thinkingSteps}
+                                        />
+                                    )}
                             </div>
                         ))}
                         <div ref={messagesEndRef} />
@@ -414,9 +407,9 @@ const VoiceAICustomerInterface: React.FC = () => {
                         <span className="whitespace-nowrap py-2 text-sm text-gray-400">
                             Quick Groups:
                         </span>
-                        {quickGroups.map((group) => (
+                        {quickGroups.map((group, index) => (
                             <button
-                                key={group.name}
+                                key={group.name + index}
                                 onClick={() => setSelectedGroup(group.name)}
                                 className={`whitespace-nowrap rounded-full px-3 py-1 text-sm transition-colors ${
                                     selectedGroup === group.name
