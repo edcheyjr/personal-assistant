@@ -59,11 +59,15 @@ export default function CreateForm({ isOpen, onOpenChange, onClose }: Props) {
                 console.log('data', response.data)
                 toast.success('Successfully created agent')
             } else {
-                toast.error(
-                    response.error || response.status
-                        ? `${response.status}: ${response.error}`
-                        : 'Agent creation completed but with unexpected status'
-                )
+                if (response.status == 422) {
+                    toast.error('Missing fields')
+                } else {
+                    toast.error(
+                        response.error || response.status
+                            ? `${response.status}: ${response.error}`
+                            : 'Agent creation completed but with unexpected status'
+                    )
+                }
             }
             onClose()
         },
