@@ -11,16 +11,13 @@ import { Separator } from '../ui/separator'
 
 interface Props {
     values: string[]
-    options: string[]
+    options: readonly string[]
     type: 'text' | 'email' | 'search'
     name: string
-    label?: string
-    formikTouched?: boolean
-    formikError?: string
     inputHelp?: string
     required?: boolean
     placeholder?: string
-    labelClass?: string
+
     selectChangeDefault?: string | number
     onChange: (updatedValues: string[]) => void
     onBlur?: (e: React.ChangeEvent<HTMLInputElement>) => void
@@ -31,12 +28,7 @@ function SpecialSelectionInput({
     values,
     name,
     type,
-    label,
-    formikTouched,
-    formikError,
     placeholder,
-    required,
-    labelClass,
     options,
     onChange,
     onBlur,
@@ -207,6 +199,13 @@ function SpecialSelectionInput({
                     {warning}
                 </div>
             ) : null}
+
+            {inputHelp && (
+                <div className="text-muted-foreground mt-2 text-sm">
+                    {inputHelp}
+                </div>
+            )}
+            {MoreInfo && MoreInfo}
         </div>
     )
 }

@@ -26,6 +26,8 @@ import { AgentTypeSelection } from './Settings'
 import Select from '@/components/inputs/select-input'
 import { useSession } from 'next-auth/react'
 import { CreateAgentRequest } from '@/types/agent'
+import SelectedInput from '@/components/inputs/SpecialSelectionInput'
+import { personalityTraits } from '@/lib/data/personality'
 
 type Props = {
     isOpen: boolean
@@ -42,6 +44,7 @@ export default function CreateForm({ isOpen, onOpenChange, onClose }: Props) {
         name: z.string().min(1, 'Name is required'),
         agent_type: z.string().min(1, 'Agent type is required'),
         description: z.string().min(1, 'Description is required'),
+        personality: z.array(z.string()),
     })
 
     const mutation = useMutation({
@@ -87,6 +90,7 @@ export default function CreateForm({ isOpen, onOpenChange, onClose }: Props) {
             name: '',
             agent_type: '',
             description: '',
+            personality: [],
         },
     })
 
@@ -94,37 +98,86 @@ export default function CreateForm({ isOpen, onOpenChange, onClose }: Props) {
         formState: { isDirty, isLoading, isValid },
     } = form
 
+    // Helper function to create a schema-compliant agent object
+    function createSchemaCompliantAgent(
+        formValues: z.infer<typeof formSchema>
+    ): CreateAgentRequest {
+        const defaultPersonalityTraits = {
+            formal: 0.5,
+            friendly: 0.5,
+            professional: 0.5,
+            conversational: 0.5,
+            humorous: 0.5,
+            serious: 0.5,
+            direct: 0.5,
+            verbose: 0.5,
+        }
+
+        return {
+            name: formValues.name,
+            agent_type: formValues.agent_type,
+            description: formValues.description,
+            user_id: email || 'user@example.com',
+
+            // Schema-compliant personality_traits (top level - numeric values)
+            personality_traits: defaultPersonalityTraits,
+
+            // Schema-compliant agent_properties
+            agent_properties: {
+                name: formValues.name,
+                tone: 'Professional', // Default value
+                objective: formValues.description, // Use description as objective
+                socratic_approach: 'balanced', // Default value
+                conversation_style: 'adaptive', // Default value
+                response_to_greetings: 'friendly', // Default value
+                focus: 'task-oriented', // Default value
+                interactivity: 'high', // Default value
+                response_format: 'structured', // Default value
+
+                // Nested personality_slider with same values
+                personality_slider: defaultPersonalityTraits,
+
+                // Empty personality_traits array as per schema
+                personality_traits: formValues.personality,
+            },
+
+            // Schema-compliant config with defaults
+            config: {
+                max_history: 10, // Default conversation history limit
+                temperature: 0.7, // Default creativity level
+                model: 'gpt-4', // Default model
+            },
+
+            voice_settings: {
+                voice_id: 'default-voice', // Default voice
+                enabled: true,
+                speaking_rate: 1.0,
+                pitch: 1.0,
+                volume: 1.0,
+            },
+        } as CreateAgentRequest
+    }
+
     function onSubmit(values: z.infer<typeof formSchema>) {
         if (!email) {
             toast.error('User not authenticated')
             return
         }
 
-        const createAgentData = {
-            user_id: email,
-            name: values.name,
-            agent_type: values.agent_type,
-            description: values.description,
-            personality_traits: {
-                formal: 0.5,
-                friendly: 0.5,
-                professional: 0.5,
-                conversational: 0.5,
-                humorous: 0.5,
-                serious: 0.5,
-                direct: 0.5,
-                verbose: 0.5,
-            },
-            agent_properties: {},
-            config: {},
-            voice_settings: {},
-        } as CreateAgentRequest
+        // Create schema-compliant agent data
+        const createAgentData = createSchemaCompliantAgent(values)
+
+        console.log(
+            'Submitting agent data:',
+            JSON.stringify(createAgentData, null, 2)
+        )
 
         // Optional: Add loading toast
         // toast.loading('Creating agent...', { id: 'create-agent' })
 
         mutation.mutate(createAgentData)
     }
+
     function onReset() {
         form.reset()
         form.clearErrors()
@@ -241,6 +294,32 @@ export default function CreateForm({ isOpen, onOpenChange, onClose }: Props) {
                                                 placeholder="Describe your agent's purpose and capabilities"
                                                 className=""
                                                 {...field}
+                                            />
+                                        </FormControl>
+
+                                        <FormMessage />
+                                    </div>
+                                </FormItem>
+                            )}
+                        />{' '}
+                        <FormField
+                            control={form.control}
+                            name="personality"
+                            render={({ field }) => (
+                                <FormItem className="col-span-12 col-start-auto flex self-end flex-col gap-2 space-y-0 items-start">
+                                    <FormLabel className="flex shrink-0">
+                                        Personality Traits
+                                    </FormLabel>
+
+                                    <div className="w-full">
+                                        <FormControl>
+                                            <SelectedInput
+                                                type="text"
+                                                name={field.name}
+                                                values={field.value || []}
+                                                options={personalityTraits}
+                                                onChange={field.onChange}
+                                                onBlur={field.onBlur}
                                             />
                                         </FormControl>
 

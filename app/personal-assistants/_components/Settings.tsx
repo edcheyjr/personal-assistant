@@ -38,6 +38,7 @@ import Loader from '@/components/Loader'
 import { Input } from '@/components/ui/input'
 import CreateAgentModal from './CreateAgentModal'
 import { useAgentContext, useAgentSelection } from '@/providers/agents-provider'
+import { personalityTraits as suggestedTraits } from '@/lib/data/personality'
 
 // Updated interface for personality sliders to match our types
 interface PersonalitySliders {
@@ -338,15 +339,6 @@ const AgentsSettings: React.FC = () => {
         { id: 'zap', icon: Zap, label: 'Zap' },
     ]
 
-    const suggestedTraits: string[] = [
-        'professional',
-        'enthusiastic',
-        'creative',
-        'supportive',
-        'detail-oriented',
-        'proactive',
-        'diplomatic',
-    ]
     useEffect(() => {
         if (selectedAgent) {
             setBasicInfo({
