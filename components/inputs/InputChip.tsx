@@ -16,7 +16,7 @@ function InputChip<T extends React.ReactNode>({
     return (
         <div
             className={cn(
-                `flex h-8 w-fit items-center space-x-1.5 truncate text-nowrap rounded-md bg-gray-950/10 py-0.5  pl-2.5 pr-1.5 text-center text-xs font-semibold text-emerald-700 dark:bg-gray-50/10 dark:text-emerald-300 lg:text-sm`,
+                `flex h-8 w-fit items-center space-x-1.5 truncate text-nowrap rounded-md bg-gray-950/10 py-0.5  pl-2.5 pr-1.5 text-center text-xs font-medium text-purple-700 dark:bg-gray-50/10 dark:text-purple-300 lg:text-sm`,
                 className
             )}
         >

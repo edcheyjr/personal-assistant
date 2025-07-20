@@ -33,12 +33,12 @@ import type {
 
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/utils/cn'
-import { Label } from '@radix-ui/react-label'
 import Loader from '@/components/Loader'
 import { Input } from '@/components/ui/input'
 import CreateAgentModal from './CreateAgentModal'
 import { useAgentContext, useAgentSelection } from '@/providers/agents-provider'
 import { personalityTraits as suggestedTraits } from '@/lib/data/personality'
+import { Label } from '@/components/ui/label'
 
 // Updated interface for personality sliders to match our types
 interface PersonalitySliders {

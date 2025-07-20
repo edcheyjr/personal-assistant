@@ -17,7 +17,6 @@ interface Props {
     inputHelp?: string
     required?: boolean
     placeholder?: string
-
     selectChangeDefault?: string | number
     onChange: (updatedValues: string[]) => void
     onBlur?: (e: React.ChangeEvent<HTMLInputElement>) => void
@@ -124,7 +123,7 @@ function SpecialSelectionInput({
         <div className="w-full space-y-2 pb-4 xl:pb-6">
             <div
                 style={{ width: '100%' }}
-                className="group flex flex-wrap gap-1.5 rounded-md border border-gray-500 p-2 group-hover:ring-2 group-hover:ring-teal-500 group-focus:border-teal-500 group-focus:outline-none group-focus:ring-2 group-focus:ring-teal-500 dark:bg-gray-700 dark:text-white md:w-3/4"
+                className="group flex flex-wrap gap-1.5 rounded-md border dark:border-zinc-700 p-2 group-hover:ring-2 group-hover:ring-teal-500 group-focus:border-teal-500 group-focus:outline-none group-focus:ring-2 group-focus:ring-teal-500 dark:bg-zinc-900 dark:text-white md:w-3/4"
             >
                 {/* Chips */}
                 {values.map((item, index) => (

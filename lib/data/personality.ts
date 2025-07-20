@@ -8,13 +8,11 @@ const traits = [
     'diplomatic',
     'outgoing',
     'analytical',
-    'creative',
     'organized',
     'friendly',
     'adventurous',
     'logical',
     'empathetic',
     'ambitious',
-    'others',
 ] as const
 export { traits as personalityTraits }
