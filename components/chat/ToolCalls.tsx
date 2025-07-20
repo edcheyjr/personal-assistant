@@ -7,7 +7,7 @@ import { AgentEvent } from '@/types/message'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import { useState } from 'react'
 
-export const ThinkingStep: React.FC<{ step: AgentEvent }> = ({ step }) => {
+export const ToolSteps: React.FC<{ step: AgentEvent }> = ({ step }) => {
     let stepTypeLabel = step.event || 'Unknown'
     let stepTypeClass = ''
     let icon = '🔄'
@@ -92,9 +92,7 @@ export const ThinkingStep: React.FC<{ step: AgentEvent }> = ({ step }) => {
     )
 }
 
-export const ThinkingProcess: React.FC<{ steps: AgentEvent[] }> = ({
-    steps,
-}) => {
+export const ToolCalls: React.FC<{ steps: AgentEvent[] }> = ({ steps }) => {
     const [isOpen, setIsOpen] = useState(false)
 
     if (steps.length === 0) {
@@ -105,12 +103,12 @@ export const ThinkingProcess: React.FC<{ steps: AgentEvent[] }> = ({
         <Collapsible open={isOpen} onOpenChange={setIsOpen} className="mt-3">
             <CollapsibleTrigger className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900n">
                 {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                <span>Thinking Process ({steps.length} steps)</span>
+                <span>tool calls ({steps.length})</span>
             </CollapsibleTrigger>
             <CollapsibleContent className="mt-2 pl-4 border-l-2">
                 <div className="space-y-2">
                     {steps.map((step, index) => (
-                        <ThinkingStep key={index} step={step} />
+                        <ToolSteps key={index} step={step} />
                     ))}
                 </div>
             </CollapsibleContent>

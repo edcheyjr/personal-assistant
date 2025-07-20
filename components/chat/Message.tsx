@@ -2,6 +2,7 @@ import { MessageProps } from '@/types/message'
 import React from 'react'
 import { cn } from '@/utils/cn'
 import { useThemeColor, generateThemeCSS } from '@/lib/theme'
+import MarkdownWrapper from '../MarkdownWrapper'
 
 const Message: React.FC<MessageProps> = ({ message, isError }) => {
     const { themeColor } = useThemeColor()
@@ -60,9 +61,9 @@ const Message: React.FC<MessageProps> = ({ message, isError }) => {
                 )}
                 style={message.sender === 'user' ? userMessageStyle : undefined}
             >
-                <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                    {message.text}
-                </p>
+                <div className="text-sm leading-relaxed whitespace-pre-wrap">
+                    <MarkdownWrapper>{message.text}</MarkdownWrapper>
+                </div>
 
                 {message.timestamp && (
                     <p

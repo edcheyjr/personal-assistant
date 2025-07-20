@@ -4,7 +4,7 @@ import { ViewType } from '@/types/view'
 import React, { useState } from 'react'
 import SideMenuBar from './_layout/SideBar'
 
-import Chat from './_components/Chat'
+import Chat from './_components/Chat.deprecated'
 import Settings from './_components/Settings'
 import NavBar from './_layout/NavBar'
 import ThemeDemo from '@/components/ui/theme-demo'

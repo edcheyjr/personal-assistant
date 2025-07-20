@@ -35,7 +35,6 @@ type Props = {
 
 export default function CreateForm({ isOpen, onOpenChange, onClose }: Props) {
     const { data: session } = useSession()
-    const user_id = session?.user.id
     const queryClient = useQueryClient()
 
     const formSchema = z.object({
@@ -92,13 +91,63 @@ export default function CreateForm({ isOpen, onOpenChange, onClose }: Props) {
     } = form
 
     function onSubmit(values: z.infer<typeof formSchema>) {
-        if (!user_id) {
-            toast.error('User not authenticated')
-            return
-        }
-
+        // if (!user_id) {
+        //     toast.error('User not authenticated')
+        //     return
+        // }
+        /**
+ * {
+  "name": "string",
+  "agent_type": "string",
+  "description": "string",
+  "personality_traits": {
+    "formal": 1,
+    "friendly": 1,
+    "professional": 1,
+    "conversational": 1,
+    "humorous": 1,
+    "serious": 1,
+    "direct": 1,
+    "verbose": 1
+  },
+  "agent_properties": {
+    "name": "string",
+    "tone": "string",
+    "objective": "string",
+    "socratic_approach": "string",
+    "conversation_style": "string",
+    "response_to_greetings": "string",
+    "focus": "string",
+    "interactivity": "string",
+    "response_format": "string",
+    "personality_slider": {
+      "formal": 0.5,
+      "friendly": 0.5,
+      "professional": 0.5,
+      "conversational": 0.5,
+      "humorous": 0.5,
+      "serious": 0.5,
+      "direct": 0.5,
+      "verbose": 0.5
+    },
+    "personality_traits": []
+  },
+  "config": {
+    "max_history": 0,
+    "temperature": 0,
+    "model": "string"
+  },
+  "voice_settings": {
+    "voice_id": "string",
+    "voice_settings": {
+      "additionalProp1": {}
+    }
+  },
+  "user_id": "user@example.com"
+}
+ */
         const createAgentData = {
-            user_id,
+            user_id: 'alice@sentient.ai',
             name: values.name,
             agent_type: values.agent_type,
             description: values.description,
@@ -112,6 +161,9 @@ export default function CreateForm({ isOpen, onOpenChange, onClose }: Props) {
                 direct: 0.5,
                 verbose: 0.5,
             },
+            agent_properties: {},
+            config: {},
+            voice_settings: {},
         } as CreateAgentRequest
 
         // Optional: Add loading toast

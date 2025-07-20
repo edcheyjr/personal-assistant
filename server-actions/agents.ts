@@ -11,7 +11,7 @@ import {
 
 export async function createAgentAction(agentData: CreateAgentRequest) {
     const session = await auth()
-    const token = session?.user?.token
+    const token = session?.user?.access_token
     return assistantService.createAgent(agentData, token)
 }
 

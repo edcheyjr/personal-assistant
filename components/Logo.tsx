@@ -5,10 +5,10 @@ type Props = {}
 
 const Logo = (props: Props) => {
     return (
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 ">
             {/* TODO: current thme should change here also */}
             <div className="flex p-2 items-center justify-center rounded-md bg-purple-600">
-                <Bot className="size-5" />
+                <Bot className="size-5 text-white" />
             </div>
             <div className="w-full">
                 <h1 className="text-base font-bold">Personal Assistants</h1>

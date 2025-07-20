@@ -40,12 +40,10 @@ export default function ComponentDemo() {
             <ThemeColorPicker />
 
             <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                    Button Variants
-                </h3>
+                <h3 className="text-lg font-semibold">Button Variants</h3>
 
                 <div className="flex flex-wrap gap-3">
-                    <Button>Default (Themed)</Button>
+                    <Button variant={'default'}>Default (Themed)</Button>
                     <Button variant="destructive">Destructive</Button>
                     <Button variant="outline">Outline</Button>
                     <Button variant="secondary">Secondary</Button>

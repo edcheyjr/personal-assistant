@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState, useReducer } from 'react'
 import { Bot } from 'lucide-react'
 import { AgentEvent, Message } from '@/types/message'
 import { default as MessageComponent } from '@/components/chat/Message'
@@ -9,7 +9,8 @@ import { useParams } from 'next/navigation'
 import { streamAgentResponseAction } from '@/server-actions/agents'
 import { toast } from 'sonner'
 import MessageLoading from '@/components/chat/MessageLoading'
-import { ThinkingProcess } from '@/components/chat/ThinkingSteps'
+import { ToolCalls } from '@/components/chat/ToolCalls'
+import { produce } from 'immer'
 
 interface QuickGroup {
     name: string
@@ -19,21 +20,129 @@ interface QuickGroup {
 interface StreamingMessage extends Message {
     isStreaming?: boolean
     agentName?: string
-    thinkingSteps?: AgentEvent[]
+    toolEvents?: AgentEvent[]
     toolCalls?: Map<string, any>
     finalResponse?: string
+    isStep?: boolean
+    stepContent?: string
 }
 
+interface MessagesState {
+    messages: StreamingMessage[]
+    isStreaming: boolean
+    currentStreamingId: number | null
+    agentName: string
+    streamingContent: string
+}
+
+type MessagesAction =
+    | { type: 'ADD_USER_MESSAGE'; message: StreamingMessage }
+    | { type: 'START_STREAMING'; agentName: string; messageId: number }
+    | { type: 'UPDATE_STREAMING_CONTENT'; messageId: number; content: string }
+    | { type: 'FINISH_RESPONSE'; finalMessage: StreamingMessage }
+    | { type: 'ADD_ERROR'; error: StreamingMessage }
+    | { type: 'STOP_STREAMING' }
+
+const messagesReducer = produce(
+    (draft: MessagesState, action: MessagesAction) => {
+        switch (action.type) {
+            case 'ADD_USER_MESSAGE':
+                draft.messages.push(action.message)
+                break
+
+            case 'START_STREAMING':
+                draft.isStreaming = true
+                draft.agentName = action.agentName
+                draft.streamingContent = ''
+                draft.currentStreamingId = action.messageId
+
+                const streamingMessage: StreamingMessage = {
+                    id: action.messageId,
+                    text: '',
+                    sender: 'assistant',
+                    timestamp: new Date().toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                    }),
+                    isStreaming: true,
+                    agentName: action.agentName,
+                    isStep: false,
+                }
+                draft.messages.push(streamingMessage)
+                break
+
+            case 'UPDATE_STREAMING_CONTENT':
+                draft.streamingContent += action.content
+                const messageIndex = draft.messages.findIndex(
+                    (msg) => msg.id === action.messageId
+                )
+                if (messageIndex !== -1) {
+                    draft.messages[messageIndex].text = draft.streamingContent
+                }
+                break
+
+            case 'FINISH_RESPONSE':
+                const streamingIndex = draft.messages.findIndex(
+                    (msg) => msg.id === draft.currentStreamingId
+                )
+                if (streamingIndex !== -1) {
+                    draft.messages[streamingIndex] = {
+                        ...action.finalMessage,
+                        isStreaming: false,
+                    }
+                }
+                draft.isStreaming = false
+                draft.currentStreamingId = null
+                draft.streamingContent = ''
+                break
+
+            case 'ADD_ERROR':
+                draft.messages.push(action.error)
+                draft.isStreaming = false
+                draft.currentStreamingId = null
+                draft.streamingContent = ''
+                break
+
+            case 'STOP_STREAMING':
+                // If we have streaming content, finalize it
+                if (draft.currentStreamingId && draft.streamingContent) {
+                    const streamingIndex = draft.messages.findIndex(
+                        (msg) => msg.id === draft.currentStreamingId
+                    )
+                    if (streamingIndex !== -1) {
+                        draft.messages[streamingIndex].text =
+                            draft.streamingContent
+                        draft.messages[streamingIndex].isStreaming = false
+                    }
+                }
+                draft.isStreaming = false
+                draft.currentStreamingId = null
+                draft.messages = draft.messages.filter(
+                    (msg) => !msg.isStreaming || (msg.isStreaming && msg.text)
+                )
+                draft.streamingContent = ''
+                break
+        }
+    }
+)
+
 const VoiceAICustomerInterface: React.FC = () => {
-    const { id } = useParams() // current assistant id
+    const { id } = useParams()
     const [message, setMessage] = useState<string>('')
     const [isError, setIsError] = useState<boolean>(false)
     const [isListening, setIsListening] = useState<boolean>(false)
     const [isRecording, setIsRecording] = useState<boolean>(false)
-    const [messages, setMessages] = useState<StreamingMessage[]>([])
     const [selectedGroup, setSelectedGroup] = useState<string>('Support Team')
-    const [isStreaming, setIsStreaming] = useState<boolean>(false)
     const [threadId] = useState<string>(() => crypto.randomUUID())
+
+    const [messagesState, dispatch] = useReducer(messagesReducer, {
+        messages: [],
+        isStreaming: false,
+        currentStreamingId: null,
+        agentName: '',
+        streamingContent: '',
+    })
+    console.log('messageState', messagesState)
 
     const messagesEndRef = useRef<HTMLDivElement>(null)
     const abortControllerRef = useRef<AbortController | null>(null)
@@ -44,7 +153,7 @@ const VoiceAICustomerInterface: React.FC = () => {
 
     useEffect(() => {
         scrollToBottom()
-    }, [messages])
+    }, [messagesState.messages])
 
     const handleStreamResponse = async (userMessage: string) => {
         if (abortControllerRef.current) {
@@ -52,7 +161,6 @@ const VoiceAICustomerInterface: React.FC = () => {
         }
 
         abortControllerRef.current = new AbortController()
-        setIsStreaming(true)
 
         try {
             const {
@@ -68,7 +176,11 @@ const VoiceAICustomerInterface: React.FC = () => {
                 const errorMessage: StreamingMessage = {
                     id: Date.now(),
                     text:
-                        typeof stream == 'string' ? stream : error ? error : '',
+                        typeof stream == 'string'
+                            ? stream
+                            : error
+                            ? error
+                            : 'Unknown error occurred',
                     sender: 'system',
                     timestamp: new Date().toLocaleTimeString([], {
                         hour: '2-digit',
@@ -76,29 +188,40 @@ const VoiceAICustomerInterface: React.FC = () => {
                     }),
                     isStreaming: false,
                 }
-                setMessages((prev) => [...prev, errorMessage])
                 setIsError(true)
-                setIsStreaming(false)
-                toast.error(error)
+                dispatch({ type: 'ADD_ERROR', error: errorMessage })
+                toast.error(error || 'An error occurred')
                 return
             }
 
             if (!stream) {
+                const noStreamError: StreamingMessage = {
+                    id: Date.now(),
+                    text: 'No response received from the server',
+                    sender: 'system',
+                    timestamp: new Date().toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                    }),
+                    isStreaming: false,
+                }
+                dispatch({ type: 'ADD_ERROR', error: noStreamError })
                 return
             }
 
             const reader = stream.getReader()
             const decoder = new TextDecoder()
 
-            let currentAgentMessage: StreamingMessage | null = null
-            let agentName = ''
-            let streamingContent = ''
-            let streamingMessageId: number | null = null
-            let thinkingSteps: AgentEvent[] = []
-            let toolCalls = new Map<string, any>()
-            let finalResponse = ''
+            const streamingMessageId = Date.now()
+            dispatch({
+                type: 'START_STREAMING',
+                agentName: 'AI Assistant',
+                messageId: streamingMessageId,
+            })
 
             let buffer = ''
+            let hasReceivedContent = false
+            let accumulatedContent = ''
 
             while (true) {
                 const { done, value } = await reader.read()
@@ -111,10 +234,6 @@ const VoiceAICustomerInterface: React.FC = () => {
                 buffer = lines.pop() || ''
 
                 for (const line of lines) {
-                    if (line.startsWith('event: agent_event')) {
-                        continue
-                    }
-
                     if (line.startsWith('data: ')) {
                         const jsonString = line.slice(6).trim()
 
@@ -123,25 +242,24 @@ const VoiceAICustomerInterface: React.FC = () => {
                         }
 
                         try {
-                            const eventData: AgentEvent = JSON.parse(jsonString)
-                            thinkingSteps.push(eventData)
+                            const eventData = JSON.parse(jsonString)
 
                             if (
-                                eventData.event === 'on_chain_start' &&
-                                eventData.name === 'LangGraph'
+                                eventData.type === 'content' &&
+                                eventData.content
                             ) {
-                                agentName =
-                                    eventData.data?.input?.agent_properties
-                                        ?.name || 'AI Assistant'
-                            }
-
-                            if (eventData.event === 'on_chat_model_start') {
-                                streamingContent = ''
-                                streamingMessageId = Date.now()
-
-                                const streamingMessage: StreamingMessage = {
+                                hasReceivedContent = true
+                                accumulatedContent += eventData.content // Accumulate locally
+                                dispatch({
+                                    type: 'UPDATE_STREAMING_CONTENT',
+                                    messageId: streamingMessageId,
+                                    content: eventData.content,
+                                })
+                            } else if (eventData.type === 'end') {
+                                // Finalize the message using local accumulated content
+                                const finalMessage: StreamingMessage = {
                                     id: streamingMessageId,
-                                    text: '',
+                                    text: accumulatedContent, // Use local accumulator
                                     sender: 'assistant',
                                     timestamp: new Date().toLocaleTimeString(
                                         [],
@@ -150,103 +268,15 @@ const VoiceAICustomerInterface: React.FC = () => {
                                             minute: '2-digit',
                                         }
                                     ),
-                                    isStreaming: true,
-                                    agentName: agentName || 'AI Assistant',
-                                    thinkingSteps: [...thinkingSteps],
+                                    isStreaming: false,
+                                    agentName: 'AI Assistant',
+                                    isStep: false,
                                 }
-
-                                setMessages((prev) => {
-                                    const withoutStreaming = prev.filter(
-                                        (msg) => !msg.isStreaming
-                                    )
-                                    return [
-                                        ...withoutStreaming,
-                                        streamingMessage,
-                                    ]
+                                dispatch({
+                                    type: 'FINISH_RESPONSE',
+                                    finalMessage,
                                 })
-                            }
-
-                            if (eventData.event === 'on_chat_model_stream') {
-                                if (
-                                    eventData.data?.chunk &&
-                                    streamingMessageId
-                                ) {
-                                    streamingContent += eventData.data.chunk
-
-                                    setMessages((prev) => {
-                                        return prev.map((msg) => {
-                                            if (msg.id === streamingMessageId) {
-                                                return {
-                                                    ...msg,
-                                                    text: streamingContent,
-                                                    thinkingSteps: [
-                                                        ...thinkingSteps,
-                                                    ],
-                                                }
-                                            }
-                                            return msg
-                                        })
-                                    })
-                                }
-                            }
-
-                            if (
-                                eventData.event === 'on_chain_end' &&
-                                eventData.name === 'LangGraph'
-                            ) {
-                                const output = eventData.data?.output
-                                if (output?.messages) {
-                                    const aiMessages = output.messages.filter(
-                                        (msg) =>
-                                            msg.type === 'AIMessage' ||
-                                            msg.role === 'assistant'
-                                    )
-                                    const latestAiMessage =
-                                        aiMessages[aiMessages.length - 1]
-
-                                    if (
-                                        latestAiMessage &&
-                                        latestAiMessage.content
-                                    ) {
-                                        finalResponse = latestAiMessage.content
-
-                                        const agentMessage: StreamingMessage = {
-                                            id:
-                                                streamingMessageId ||
-                                                Date.now(),
-                                            text: finalResponse,
-                                            sender: 'assistant',
-                                            timestamp:
-                                                new Date().toLocaleTimeString(
-                                                    [],
-                                                    {
-                                                        hour: '2-digit',
-                                                        minute: '2-digit',
-                                                    }
-                                                ),
-                                            isStreaming: false,
-                                            agentName:
-                                                output.agent_name ||
-                                                agentName ||
-                                                'AI Assistant',
-                                            thinkingSteps: [...thinkingSteps],
-                                            finalResponse: finalResponse,
-                                        }
-
-                                        setMessages((prev) => {
-                                            const withoutStreaming =
-                                                prev.filter(
-                                                    (msg) => !msg.isStreaming
-                                                )
-                                            return [
-                                                ...withoutStreaming,
-                                                agentMessage,
-                                            ]
-                                        })
-
-                                        currentAgentMessage = agentMessage
-                                    }
-                                }
+                                return
                             }
                         } catch (parseError) {
                             console.warn(
@@ -257,39 +287,60 @@ const VoiceAICustomerInterface: React.FC = () => {
                             continue
                         }
                     }
-
-                    if (line.startsWith('event: completed')) {
-                        setIsStreaming(false)
-                        return
-                    }
                 }
-                setIsStreaming(false)
             }
 
-            if (buffer.trim()) {
-                if (buffer.startsWith('data: ')) {
-                    const jsonString = buffer.slice(6).trim()
-                    if (jsonString) {
-                        try {
-                            const eventData: AgentEvent = JSON.parse(jsonString)
-                            thinkingSteps.push(eventData)
-                        } catch (parseError) {
-                            console.warn(
-                                'Failed to parse final buffer JSON:',
-                                jsonString
-                            )
+            // Handle any remaining buffer
+            if (buffer.trim() && buffer.startsWith('data: ')) {
+                const jsonString = buffer.slice(6).trim()
+                if (jsonString) {
+                    try {
+                        const eventData = JSON.parse(jsonString)
+                        if (eventData.type === 'content' && eventData.content) {
+                            accumulatedContent += eventData.content // Accumulate locally
+                            dispatch({
+                                type: 'UPDATE_STREAMING_CONTENT',
+                                messageId: streamingMessageId,
+                                content: eventData.content,
+                            })
                         }
+                    } catch (parseError) {
+                        console.warn(
+                            'Failed to parse final buffer JSON:',
+                            jsonString
+                        )
                     }
                 }
+            }
+
+            // If we received content but no explicit end, finalize the message
+            if (hasReceivedContent) {
+                const finalMessage: StreamingMessage = {
+                    id: streamingMessageId,
+                    text: accumulatedContent, // Use local accumulator
+                    sender: 'assistant',
+                    timestamp: new Date().toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                    }),
+                    isStreaming: false,
+                    agentName: 'AI Assistant',
+                    isStep: false,
+                }
+                dispatch({ type: 'FINISH_RESPONSE', finalMessage })
+            } else {
+                dispatch({ type: 'STOP_STREAMING' })
             }
         } catch (error) {
             setIsError(true)
             console.error('Stream error:', error)
-            setIsStreaming(false)
 
             const errorMessage: StreamingMessage = {
                 id: Date.now(),
-                text: "I'm sorry, I encountered an error. Please try again.",
+                text:
+                    error instanceof Error
+                        ? error.message
+                        : "I'm sorry, I encountered an error. Please try again.",
                 sender: 'system',
                 timestamp: new Date().toLocaleTimeString([], {
                     hour: '2-digit',
@@ -297,13 +348,15 @@ const VoiceAICustomerInterface: React.FC = () => {
                 }),
                 isStreaming: false,
             }
-            setMessages((prev) => [...prev, errorMessage])
+            dispatch({ type: 'ADD_ERROR', error: errorMessage })
+        } finally {
+            setIsError(false)
+            dispatch({ type: 'STOP_STREAMING' })
         }
-        setIsError(false)
     }
 
     const handleSendMessage = async (): Promise<void> => {
-        if (message.trim() && !isStreaming) {
+        if (message.trim() && !messagesState.isStreaming) {
             const newMessage: StreamingMessage = {
                 id: Date.now(),
                 text: message,
@@ -314,7 +367,7 @@ const VoiceAICustomerInterface: React.FC = () => {
                 }),
             }
 
-            setMessages((prev) => [...prev, newMessage])
+            dispatch({ type: 'ADD_USER_MESSAGE', message: newMessage })
             const userMessage = message
             setMessage('')
 
@@ -353,7 +406,7 @@ const VoiceAICustomerInterface: React.FC = () => {
         <div className="flex flex-1 flex-col overflow-hidden max-h-[92vh] min[2048px]:max-h-[95vh]">
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-6 h-full">
-                {messages.length === 0 ? (
+                {messagesState.messages.length === 0 ? (
                     <div className="flex h-full flex-col items-center justify-center text-center">
                         <div className="mb-4 flex size-16 items-center justify-center rounded-full bg-purple-600 text-white text-shadow-2xs text-shadow-purple-950">
                             <Bot className="size-8" />
@@ -367,8 +420,8 @@ const VoiceAICustomerInterface: React.FC = () => {
                     </div>
                 ) : (
                     <div className="mx-auto max-w-4xl">
-                        {messages.map((msg, index) => (
-                            <div key={msg.id + index} className="mb-4">
+                        {messagesState.messages.map((msg) => (
+                            <div key={msg.id} className="mb-4">
                                 <MessageComponent
                                     message={msg}
                                     isError={isError}
@@ -386,14 +439,9 @@ const VoiceAICustomerInterface: React.FC = () => {
                                             — {msg.agentName}
                                         </div>
                                     )}
-                                {msg.thinkingSteps &&
-                                    msg.sender === 'assistant' && (
-                                        <ThinkingProcess
-                                            steps={msg.thinkingSteps}
-                                        />
-                                    )}
                             </div>
                         ))}
+
                         <div ref={messagesEndRef} />
                     </div>
                 )}
@@ -430,10 +478,10 @@ const VoiceAICustomerInterface: React.FC = () => {
                         handleKeyPress={handleKeyPress}
                         handleSendMessage={handleSendMessage}
                         toggleListening={toggleListening}
-                        disabled={isStreaming}
+                        disabled={messagesState.isStreaming}
                     />
 
-                    {isStreaming && (
+                    {messagesState.isStreaming && (
                         <div className="mt-2 text-sm text-gray-500 flex items-center gap-2">
                             <MessageLoading />
                             <span>Processing your message...</span>
