@@ -55,6 +55,22 @@ class AssistantService {
         return token ? { Authorization: `Bearer ${token}` } : {}
     }
 
+    // Helper method to ensure data is properly formatted for JSON
+    private prepareRequestBody(data: any): string {
+        // If it's already a string, assume it's JSON and return as-is
+        if (typeof data === 'string') {
+            // Validate it's valid JSON
+            try {
+                JSON.parse(data)
+                return data
+            } catch (e) {
+                throw new Error('Invalid JSON string provided')
+            }
+        }
+        // If it's an object, stringify it
+        return JSON.stringify(data)
+    }
+
     async getCurrentUser(token: string): Promise<ApiResponse<string>> {
         return this.makeRequest<string>('/auth/me', {
             method: 'GET',
@@ -74,10 +90,11 @@ class AssistantService {
         agentData: CreateAgentRequest,
         token?: string
     ): Promise<ApiResponse<Agent>> {
+        console.log('agentData', agentData)
         return this.makeRequest<Agent>('/multi-agents', {
             method: 'POST',
             headers: this.getAuthHeaders(token),
-            body: JSON.stringify(agentData),
+            body: this.prepareRequestBody(agentData),
         })
     }
 
@@ -115,7 +132,7 @@ class AssistantService {
         return this.makeRequest<Agent>(`/multi-agents/${agentId}`, {
             method: 'PUT',
             headers: this.getAuthHeaders(token),
-            body: JSON.stringify(updateData),
+            body: this.prepareRequestBody(updateData),
         })
     }
 

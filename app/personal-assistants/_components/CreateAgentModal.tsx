@@ -61,6 +61,8 @@ export default function CreateForm({ isOpen, onOpenChange, onClose }: Props) {
             } else {
                 if (response.status == 422) {
                     toast.error('Missing fields')
+                    process.env.NODE_ENV == 'development' &&
+                        console.error('Submitting Error', response.error)
                 } else {
                     toast.error(
                         response.error || response.status
