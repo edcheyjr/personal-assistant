@@ -18,6 +18,8 @@ import {
     ChevronDown,
     LoaderIcon,
     Trash,
+    RefreshCcw,
+    Dot,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { setStorageItem } from '@/utils/localstorageAccess'
@@ -169,7 +171,7 @@ const AgentSelector: React.FC<{
         <div className="relative w-full">
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="flex justify-between items-center gap-2 px-4 py-2 bg-secondary hover:bg-secondary/80 rounded-lg transition-colors w-full z-1"
+                className="flex justify-between items-center gap-2 px-4 py-1.5 bg-secondary hover:bg-secondary/80 rounded-lg transition-colors w-full z-1 border h-10"
             >
                 {selectedAgent ? (
                     <>
@@ -216,13 +218,19 @@ const AgentSelector: React.FC<{
                                         onSelectAgent(agent)
                                         setIsOpen(false)
                                     }}
-                                    className="w-full p-3 text-left hover:bg-accent transition-colors border-b border-border last:border-b-0"
+                                    className={cn(
+                                        'w-full p-3 text-left hover:bg-accent transition-colors border-b border-border last:border-b-0'
+                                    )}
+                                    style={
+                                        selectedAgent?.id == agent.id
+                                            ? {
+                                                  borderColor: selectedColor,
+                                                  background: `${selectedColor}33`,
+                                              }
+                                            : undefined
+                                    }
                                 >
                                     <div className="flex items-center gap-3">
-                                        <Bot
-                                            size={16}
-                                            className="text-primary"
-                                        />
                                         <div>
                                             <div className="font-medium text-foreground">
                                                 {agent.name}
@@ -289,7 +297,7 @@ export const AgentTypeSelection: { value: AgentType; label: string }[] = [
 const AgentsSettings: React.FC = () => {
     const queryClient = useQueryClient()
 
-    const { agents, isLoading, error } = useAgentContext()
+    const { agents, isLoading, error, refreshAgents } = useAgentContext()
     const { clearSelection, selectAgent, selectedAgent } = useAgentSelection()
     const selectCommunicationTone = communicationTones.map((tone) => ({
         value: tone,
@@ -377,7 +385,6 @@ const AgentsSettings: React.FC = () => {
     const mutation = useMutation({
         mutationFn: updateAgentAction,
         onSuccess: async (response) => {
-            // More robust success handling
             if (response.status === 200 || response.status === 201) {
                 console.log('data', response.data)
                 toast.success('Successfully updated agent')
@@ -418,8 +425,7 @@ const AgentsSettings: React.FC = () => {
     const deleteMutation = useMutation({
         mutationFn: deleteAgentAction,
         onSuccess: async (response) => {
-            // More robust success handling
-            if (response.status === 200 || response.status === 201) {
+            if (response.status === 200 || response.status == 204) {
                 console.log('data', response.data)
                 toast.success(
                     `Successfully deleted agent ${selectedAgent?.name}`
@@ -469,6 +475,7 @@ const AgentsSettings: React.FC = () => {
         }
         // delete agent
         const response = await deleteMutation.mutateAsync(selectedAgent.id)
+        clearSelection()
     }
 
     const handleCreateNew = () => {
@@ -1038,6 +1045,19 @@ const AgentsSettings: React.FC = () => {
                     <div className="bg-card border border-border rounded-lg p-4">
                         <h3 className="font-medium mb-3">Quick Actions</h3>
                         <div className="space-y-2">
+                            <button
+                                disabled={isLoading}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-accent rounded transition-colors"
+                                onClick={() => {
+                                    refreshAgents()
+                                }}
+                            >
+                                <RefreshCcw
+                                    size={16}
+                                    className={isLoading ? 'animate-spin' : ''}
+                                />
+                                <span>Refresh Agents</span>
+                            </button>
                             <button className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-accent rounded transition-colors">
                                 <Download size={16} />
                                 <span>Export Configuration</span>
@@ -1068,7 +1088,7 @@ const AgentsSettings: React.FC = () => {
                             disabled={deleteMutation.isPending}
                         >
                             {deleteMutation.isPending ? (
-                                <LoaderIcon className="size-4 animatet-spin" />
+                                <LoaderIcon className="size-4 animate-spin" />
                             ) : (
                                 <Trash className="size-4 stroke-2" />
                             )}
