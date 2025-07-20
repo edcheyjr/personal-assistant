@@ -11,20 +11,80 @@ import {
 import { getAPIBaseURL } from '@/utils/baseUrl'
 import { fetchWithTimeout } from '@/utils/fetchWithTimeout'
 
+interface RequestOptions extends Omit<RequestInit, 'headers'> {
+    headers?: Record<string, string>
+    skipContentType?: boolean
+    customContentType?: string
+}
+
 class AssistantService {
+    private defaultHeaders: Record<string, string> = {}
+
+    // Method to set default headers that will be applied to all requests
+    setDefaultHeaders(headers: Record<string, string>): void {
+        this.defaultHeaders = { ...headers }
+    }
+
+    // Method to add or update a single default header
+    setDefaultHeader(key: string, value: string): void {
+        this.defaultHeaders[key] = value
+    }
+
+    // Method to remove a default header
+    removeDefaultHeader(key: string): void {
+        delete this.defaultHeaders[key]
+    }
+
+    // Method to clear all default headers
+    clearDefaultHeaders(): void {
+        this.defaultHeaders = {}
+    }
+
+    private mergeHeaders(
+        requestHeaders: Record<string, string> = {},
+        skipContentType = false,
+        customContentType?: string
+    ): Record<string, string> {
+        const headers: Record<string, string> = {
+            ...this.defaultHeaders,
+            ...requestHeaders,
+        }
+
+        // Handle Content-Type header
+        if (!skipContentType) {
+            if (customContentType) {
+                headers['Content-Type'] = customContentType
+            } else if (!headers['Content-Type']) {
+                headers['Content-Type'] = 'application/json'
+            }
+        } else {
+            // Remove Content-Type if explicitly skipped
+            delete headers['Content-Type']
+        }
+
+        return headers
+    }
+
     private async makeRequest<T>(
         endpoint: string,
-        options: RequestInit = {}
+        options: RequestOptions = {}
     ): Promise<ApiResponse<T>> {
+        const {
+            skipContentType,
+            customContentType,
+            headers = {},
+            ...restOptions
+        } = options
         const baseUrl = getAPIBaseURL()
+
         try {
             const response = await fetchWithTimeout(`${baseUrl}${endpoint}`, {
-                headers: {
-                    'Content-Type': 'application/json',
-
-                    ...options.headers,
-                },
-                ...options,
+                headers: this.mergeHeaders(
+                    headers,
+                    skipContentType,
+                    customContentType
+                ),
+                ...restOptions,
                 timeout: 1000 * 60, //1 min
             })
 
@@ -71,37 +131,47 @@ class AssistantService {
         return JSON.stringify(data)
     }
 
-    async getCurrentUser(token: string): Promise<ApiResponse<string>> {
+    async getCurrentUser(
+        token: string,
+        options?: RequestOptions
+    ): Promise<ApiResponse<string>> {
         return this.makeRequest<string>('/auth/me', {
             method: 'GET',
             headers: this.getAuthHeaders(token),
+            ...options,
         })
     }
 
     // UUID Methods
-    private async generateThreadId(): Promise<ApiResponse<ThreadId>> {
+    private async generateThreadId(
+        options?: RequestOptions
+    ): Promise<ApiResponse<ThreadId>> {
         return this.makeRequest<ThreadId>('/uuids/thread_id', {
             method: 'GET',
+            ...options,
         })
     }
 
     // Agent CRUD Operations
     async createAgent(
         agentData: CreateAgentRequest,
-        token?: string
+        token?: string,
+        options?: RequestOptions
     ): Promise<ApiResponse<Agent>> {
         console.log('agentData', agentData)
         return this.makeRequest<Agent>('/multi-agents', {
             method: 'POST',
             headers: this.getAuthHeaders(token),
             body: this.prepareRequestBody(agentData),
+            ...options,
         })
     }
 
     async getAgents(
         skip: number = 0,
         limit: number = 100,
-        token?: string
+        token?: string,
+        options?: RequestOptions
     ): Promise<ApiResponse<Agent[]>> {
         const params = new URLSearchParams({
             skip: skip.toString(),
@@ -111,39 +181,64 @@ class AssistantService {
         return this.makeRequest<Agent[]>(`/multi-agents/?${params}`, {
             method: 'GET',
             headers: this.getAuthHeaders(token),
+            skipContentType: true, // GET request doesn't need Content-Type
+            ...options,
         })
     }
 
     async getAgent(
         agentId: string,
-        token?: string
+        token?: string,
+        options?: RequestOptions
     ): Promise<ApiResponse<Agent>> {
         return this.makeRequest<Agent>(`/multi-agents/${agentId}`, {
             method: 'GET',
             headers: this.getAuthHeaders(token),
+            skipContentType: true, // GET request doesn't need Content-Type
+            ...options,
         })
     }
 
     async updateAgent(
         agentId: string,
         updateData: UpdateAgentRequest,
-        token?: string
+        token?: string,
+        options?: RequestOptions
     ): Promise<ApiResponse<Agent>> {
         return this.makeRequest<Agent>(`/multi-agents/${agentId}`, {
             method: 'PUT',
             headers: this.getAuthHeaders(token),
             body: this.prepareRequestBody(updateData),
+            ...options,
         })
     }
 
     async deleteAgent(
         agentId: string,
-        token?: string
-    ): Promise<ApiResponse<void>> {
-        return this.makeRequest<void>(`/multi-agents/${agentId}`, {
-            method: 'DELETE',
-            headers: this.getAuthHeaders(token),
-        })
+        token?: string,
+        options?: RequestOptions
+    ): Promise<ApiResponse<unknown>> {
+        const baseUrl = getAPIBaseURL()
+        const response = await fetchWithTimeout(
+            `${baseUrl}/multi-agents/${agentId}`,
+            {
+                method: 'DELETE',
+                headers: this.getAuthHeaders(token),
+                skipContentType: true,
+                ...options,
+            }
+        )
+        if (!response.ok) {
+            return {
+                data: null,
+                error: 'Failed to delete agent',
+                status: response.status,
+            }
+        }
+        return {
+            data: null,
+            status: response.status,
+        }
     }
 
     // Streaming Methods
@@ -237,6 +332,14 @@ class AssistantService {
         } finally {
             reader.releaseLock()
         }
+    }
+
+    // Utility method to make custom requests with full control
+    async customRequest<T>(
+        endpoint: string,
+        options: RequestOptions
+    ): Promise<ApiResponse<T>> {
+        return this.makeRequest<T>(endpoint, options)
     }
 }
 

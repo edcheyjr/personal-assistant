@@ -28,6 +28,7 @@ import { useSession } from 'next-auth/react'
 import { CreateAgentRequest } from '@/types/agent'
 import SelectedInput from '@/components/inputs/SpecialSelectionInput'
 import { personalityTraits } from '@/lib/data/personality'
+import { useAgentSelection } from '@/providers/agents-provider'
 
 type Props = {
     isOpen: boolean
@@ -36,6 +37,7 @@ type Props = {
 }
 
 export default function CreateForm({ isOpen, onOpenChange, onClose }: Props) {
+    const { clearSelection } = useAgentSelection()
     const { data: session } = useSession()
     const email = session?.user.email
     const queryClient = useQueryClient()
@@ -60,6 +62,7 @@ export default function CreateForm({ isOpen, onOpenChange, onClose }: Props) {
                 await queryClient.invalidateQueries({
                     queryKey: [AGENTS_TAG],
                 })
+                clearSelection()
             } else {
                 if (response.status == 422) {
                     toast.error('Missing fields')
@@ -126,42 +129,33 @@ export default function CreateForm({ isOpen, onOpenChange, onClose }: Props) {
             agent_type: formValues.agent_type,
             description: formValues.description,
             user_id: email || 'user@example.com',
-
-            // Schema-compliant personality_traits (top level - numeric values)
             personality_traits: defaultPersonalityTraits,
-
-            // Schema-compliant agent_properties
             agent_properties: {
                 name: formValues.name,
-                tone: 'Professional', // Default value
-                objective: formValues.description, // Use description as objective
-                socratic_approach: 'balanced', // Default value
-                conversation_style: 'adaptive', // Default value
-                response_to_greetings: 'friendly', // Default value
-                focus: 'task-oriented', // Default value
-                interactivity: 'high', // Default value
-                response_format: 'structured', // Default value
-
-                // Nested personality_slider with same values
+                tone: 'Professional',
+                objective: formValues.description,
+                socratic_approach: 'balanced',
+                conversation_style: 'adaptive',
+                response_to_greetings: 'friendly',
+                focus: 'task-oriented',
+                interactivity: 'high',
+                response_format: 'structured',
                 personality_slider: defaultPersonalityTraits,
-
-                // Empty personality_traits array as per schema
                 personality_traits: formValues.personality,
             },
-
-            // Schema-compliant config with defaults
             config: {
-                max_history: 10, // Default conversation history limit
-                temperature: 0.7, // Default creativity level
-                model: 'gpt-4', // Default model
+                max_history: 10,
+                temperature: 0.7,
+                model: 'gpt-4',
             },
-
             voice_settings: {
                 voice_id: 'default-voice', // Default voice
-                enabled: true,
-                speaking_rate: 1.0,
-                pitch: 1.0,
-                volume: 1.0,
+                voice_settings: {
+                    enabled: true,
+                    speaking_rate: 1.0,
+                    pitch: 1.0,
+                    volume: 1.0,
+                },
             },
         } as CreateAgentRequest
     }

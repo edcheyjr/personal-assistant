@@ -61,15 +61,15 @@ export interface AgentConfig {
     [key: string]: any // Allow for additional config options
 }
 
-export interface VoiceSettings {
-    enabled: boolean
+type VoiceSettings = {
     voice_id: string
-    speaking_rate: number
-    pitch: number
-    volume: number
-    [key: string]: any // Allow for additional voice settings
+    voice_settings: {
+        enabled: boolean
+        speaking_rate: number
+        pitch: number
+        volume: number
+    }
 }
-
 export interface Agent {
     id: string
     name: string

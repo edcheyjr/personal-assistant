@@ -175,12 +175,14 @@ const AgentSelector: React.FC<{
             >
                 {selectedAgent ? (
                     <>
-                        <Bot size={16} />
-                        <span>{selectedAgent.name}</span>
+                        <Bot className="size-5" />
+                        <span className="text-nowrap truncate">
+                            {selectedAgent.name}
+                        </span>
                     </>
                 ) : (
                     <>
-                        <Plus size={16} />
+                        <Plus className="size-5" />
                         <span>Select Agent</span>
                     </>
                 )}
@@ -497,9 +499,9 @@ const AgentsSettings: React.FC = () => {
                 personality_traits: personalityTraits,
                 tone: communicationTone,
             },
+            voice_settings: selectedAgent.voice_settings,
         }
 
-        console.log('Saving agent configuration:', updatedAgent)
         mutation.mutateAsync({
             agentId: selectedAgent.id,
             updateData: updatedAgent,
