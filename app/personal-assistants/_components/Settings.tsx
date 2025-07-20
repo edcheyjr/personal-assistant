@@ -453,7 +453,7 @@ const AgentsSettings: React.FC = () => {
             }
         >
             <Icon size={18} />
-            <span className="font-medium">{label}</span>
+            <span className="font-medium max-md:sr-only">{label}</span>
         </button>
     )
 
@@ -531,15 +531,18 @@ const AgentsSettings: React.FC = () => {
 
     return (
         <div className=" max-h-[90vh] min-[2048px]:max-h-[95vh] bg-background text-foreground p-6 overflow-y-auto">
-            <div className="flex flex-wrap gap-6 justify-between items-center mb-8">
-                <div className="flex items-center gap-4">
+            <div className="flex max-md:flex-wrap max-md:gap-6 justify-between items-center mb-8">
+                <div
+                    className="flex gap-4 lg:items-center
+                 "
+                >
                     <div
-                        className="size-12 bg-primary rounded-lg flex items-center justify-center "
+                        className="size-12 min-w-12 bg-primary rounded-lg flex items-center justify-center "
                         style={{ backgroundColor: selectedColor }}
                     >
                         <Brain className="size-6 text-primary-foreground" />
                     </div>
-                    <div>
+                    <div className="">
                         <h2 className="text-2xl font-bold">
                             {selectedAgent.name}
                         </h2>
@@ -548,8 +551,8 @@ const AgentsSettings: React.FC = () => {
                         </p>
                     </div>
                 </div>
-                <div className="flex items-center gap-3">
-                    <div className="w-full max-w-56">
+                <div className="flex max-md:flex-wrap items-center gap-3">
+                    <div className="max-md:w-full w-72">
                         <AgentSelector
                             agents={agents}
                             selectedAgent={selectedAgent}
@@ -564,7 +567,7 @@ const AgentsSettings: React.FC = () => {
                     <Button
                         variant={'default'}
                         size={'lg'}
-                        className="font-bold"
+                        className="font-bold max-md:w-full"
                         onClick={handleSaveConfiguration}
                         style={{
                             backgroundColor: selectedColor,
@@ -685,7 +688,7 @@ const AgentsSettings: React.FC = () => {
                                     <h3 className="font-medium mb-4">
                                         Agent Identity
                                     </h3>
-                                    <div className="grid grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                                         <div>
                                             <Label className="block text-sm font-medium mb-2">
                                                 Icon
