@@ -6,6 +6,7 @@ import {
     PersonalityTraits,
     VoiceSettings,
 } from '@/types/agent'
+import { useSession } from 'next-auth/react'
 import React, {
     createContext,
     useContext,
@@ -194,18 +195,25 @@ export const AgentProvider: React.FC<AgentProviderProps> = ({
     onAgentUpdate,
     autoSelectFirst = true,
 }) => {
+    const { data: session } = useSession()
     const { data: data, isLoading, error } = useAgents()
     const agents = data?.data || []
     const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null)
 
     // Auto-select first agent when agents load
     useEffect(() => {
-        if (autoSelectFirst && agents && agents.length > 0 && !selectedAgent) {
+        if (
+            session?.user &&
+            autoSelectFirst &&
+            agents &&
+            agents.length > 0 &&
+            !selectedAgent
+        ) {
             const firstAgent = agents.reverse()[0]
             setSelectedAgent(firstAgent)
             onAgentChange?.(firstAgent)
         }
-    }, [agents, selectedAgent, autoSelectFirst, onAgentChange])
+    }, [session, agents, selectedAgent, autoSelectFirst, onAgentChange])
 
     // Actions
     const selectAgent = useCallback(

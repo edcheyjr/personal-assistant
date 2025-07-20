@@ -8,8 +8,11 @@ import Chat from './_components/Chat'
 import Settings from './_components/Settings'
 import NavBar from './_layout/NavBar'
 import ThemeDemo from '@/components/ui/theme-demo'
+import { useAgent } from '@/hooks/api/use-agent'
+import { useAgents } from '@/hooks/api/use-agents'
 
 export default function PersonalAssitants({ sessionData }: any) {
+    const { data, isLoading, error } = useAgents()
     const [currentView, setCurrentView] =
         useState<ViewType>('customer-interface')
     const [sidebarOpen, setSidebarOpen] = useState<boolean>(false)
