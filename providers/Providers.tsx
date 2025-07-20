@@ -8,6 +8,7 @@ import {
 import { ThemeProvider } from './theme-provider'
 import QueryProvider from './query-provider'
 import { Session } from 'next-auth'
+import { AgentProvider } from './agents-provider'
 
 type ProviderType = {
     session?: Session
@@ -27,7 +28,9 @@ export default function Providers({
     return (
         <SessionProvider session={session}>
             <QueryProvider>
-                <ThemeProvider {...props}>{children}</ThemeProvider>
+                <ThemeProvider {...props}>
+                    <AgentProvider>{children}</AgentProvider>
+                </ThemeProvider>
             </QueryProvider>
         </SessionProvider>
     )

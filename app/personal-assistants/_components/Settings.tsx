@@ -38,6 +38,11 @@ import { useAgents } from '@/hooks/api/use-agents'
 import Loader from '@/components/Loader'
 import { Input } from '@/components/ui/input'
 import CreateAgentModal from './CreateAgentModal'
+import {
+    useAgentContext,
+    useAgentSelection,
+    useSelectedAgent,
+} from '@/providers/agents-provider'
 
 //FIXME: Temporary mock implementation of useAgents hook
 const useMockAgents = (params: { skip?: number; limit?: number } = {}) => {
@@ -419,9 +424,11 @@ export const AgentTypeSelection: { value: AgentType; label: string }[] = [
 ]
 
 const AgentsSettings: React.FC = () => {
-    const { data, isLoading, error } = useAgents()
+    // const { data, isLoading, error } = useAgents()
 
-    const agents = data?.data || []
+    // const agents = data?.data || []
+    const { agents, isLoading, error } = useAgentContext()
+    const { clearSelection, selectAgent, selectedAgent } = useAgentSelection()
     const selectCommunicationTone = communicationTones.map((tone) => ({
         value: tone,
         label: tone,
@@ -432,7 +439,7 @@ const AgentsSettings: React.FC = () => {
         description: '',
     })
     const [openCreateModal, setOpenCreateModal] = useState(false)
-    const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null)
+    // const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null)
     const [activeTab, setActiveTab] = useState<TabType>('personality')
     const [selectedIcon, setSelectedIcon] = useState<string>('bot')
     const [selectedColor, setSelectedColor] = useState<string>('#8B5CF6')
@@ -485,20 +492,6 @@ const AgentsSettings: React.FC = () => {
         'diplomatic',
     ]
 
-    // Set first agent as selected when data loads and populate form
-    React.useEffect(() => {
-        if (agents && agents.length > 0 && !selectedAgent) {
-            const firstAgent = agents[0]
-            setSelectedAgent(firstAgent)
-            setBasicInfo({
-                title: firstAgent.name,
-                description: firstAgent.description,
-            })
-            setCommunicationTone(firstAgent.agent_properties.tone)
-            loadAgentData(firstAgent)
-        }
-    }, [agents, selectedAgent])
-
     const loadAgentData = (agent: Agent) => {
         // Load personality sliders
         setPersonalitySliders(
@@ -523,7 +516,7 @@ const AgentsSettings: React.FC = () => {
     }
 
     const handleEditAgent = (agent: Agent) => {
-        setSelectedAgent(agent)
+        selectAgent(agent)
         loadAgentData(agent)
     }
 
@@ -629,7 +622,7 @@ const AgentsSettings: React.FC = () => {
         )
     }
 
-    if (error || data?.error) {
+    if (error) {
         return (
             <div className="size-full bg-background text-foreground p-6">
                 <div className="max-w-4xl mx-auto">
@@ -672,7 +665,7 @@ const AgentsSettings: React.FC = () => {
                             agents={agents}
                             selectedAgent={null}
                             selectedColor={selectedColor}
-                            onSelectAgent={setSelectedAgent}
+                            onSelectAgent={selectAgent}
                             onCreateNew={handleCreateNew}
                         />
                     </div>
@@ -706,7 +699,7 @@ const AgentsSettings: React.FC = () => {
                             agents={agents}
                             selectedAgent={selectedAgent}
                             onSelectAgent={(agent) => {
-                                setSelectedAgent(agent)
+                                selectAgent(agent)
                                 loadAgentData(agent)
                             }}
                             onCreateNew={handleCreateNew}
