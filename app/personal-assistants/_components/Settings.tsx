@@ -16,10 +16,12 @@ import {
     Plus,
     Search,
     ChevronDown,
+    LoaderIcon,
+    Trash,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { setStorageItem } from '@/utils/localstorageAccess'
-import { ColorKey } from '@/utils/constants'
+import { AGENTS_TAG, ColorKey } from '@/utils/constants'
 import { SliderComponent } from '@/components/Slider'
 import Select from '@/components/inputs/select-input'
 
@@ -39,6 +41,10 @@ import CreateAgentModal from './CreateAgentModal'
 import { useAgentContext, useAgentSelection } from '@/providers/agents-provider'
 import { personalityTraits as suggestedTraits } from '@/lib/data/personality'
 import { Label } from '@/components/ui/label'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { deleteAgentAction, updateAgentAction } from '@/server-actions/agents'
+import { toast } from 'sonner'
+import { logger } from '@/utils/logger'
 
 // Updated interface for personality sliders to match our types
 interface PersonalitySliders {
@@ -281,9 +287,8 @@ export const AgentTypeSelection: { value: AgentType; label: string }[] = [
 ]
 
 const AgentsSettings: React.FC = () => {
-    // const { data, isLoading, error } = useAgents()
+    const queryClient = useQueryClient()
 
-    // const agents = data?.data || []
     const { agents, isLoading, error } = useAgentContext()
     const { clearSelection, selectAgent, selectedAgent } = useAgentSelection()
     const selectCommunicationTone = communicationTones.map((tone) => ({
@@ -296,7 +301,6 @@ const AgentsSettings: React.FC = () => {
         description: '',
     })
     const [openCreateModal, setOpenCreateModal] = useState(false)
-    // const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null)
     const [activeTab, setActiveTab] = useState<TabType>('personality')
     const [selectedIcon, setSelectedIcon] = useState<string>('bot')
     const [selectedColor, setSelectedColor] = useState<string>('#8B5CF6')
@@ -369,17 +373,102 @@ const AgentsSettings: React.FC = () => {
             }
         }
     }
+    // Update mutation
+    const mutation = useMutation({
+        mutationFn: updateAgentAction,
+        onSuccess: async (response) => {
+            // More robust success handling
+            if (response.status === 200 || response.status === 201) {
+                console.log('data', response.data)
+                toast.success('Successfully updated agent')
+                await queryClient.invalidateQueries({
+                    queryKey: [AGENTS_TAG],
+                })
+            } else {
+                if (response.status == 422) {
+                    toast.error('Missing fields')
+                    process.env.NODE_ENV == 'development' &&
+                        console.error('Submitting Error', response.error)
+                } else {
+                    toast.error(
+                        response.error || response.status
+                            ? `${response.status}: ${response.error}`
+                            : 'Something went wrong while updating'
+                    )
+                }
+            }
+        },
+        onError: (error: Error & { response?: any }) => {
+            logger(error, 'Error', 'error')
 
-    const handleEditAgent = (agent: Agent) => {
-        selectAgent(agent)
-        loadAgentData(agent)
-    }
+            // Enhanced error message handling
+            const errorMessage =
+                error.response?.data?.message ??
+                error.response?.message ??
+                error.message ??
+                'Failed to create agent'
 
-    const handleDeleteAgent = (agentId: string) => {
-        if (window.confirm('Are you sure you want to delete this agent?')) {
-            // Implement delete logic
-            console.log('Deleting agent:', agentId)
+            toast.error(errorMessage)
+        },
+        onSettled: async (data, error, variables, context) => {
+            // Optional: Add loading state cleanup or additional actions
+        },
+    })
+    // Delete mutation
+    const deleteMutation = useMutation({
+        mutationFn: deleteAgentAction,
+        onSuccess: async (response) => {
+            // More robust success handling
+            if (response.status === 200 || response.status === 201) {
+                console.log('data', response.data)
+                toast.success(
+                    `Successfully deleted agent ${selectedAgent?.name}`
+                )
+                await queryClient.invalidateQueries({
+                    queryKey: [AGENTS_TAG],
+                })
+            } else {
+                if (response.status == 422) {
+                    toast.error('Missing fields')
+                    process.env.NODE_ENV == 'development' &&
+                        console.error('Submitting Error', response.error)
+                } else {
+                    toast.error(
+                        response.error || response.status
+                            ? `${response.status}: ${response.error}`
+                            : 'Something went wrong while updating'
+                    )
+                }
+            }
+        },
+        onError: (error: Error & { response?: any }) => {
+            logger(error, 'Error', 'error')
+
+            // Enhanced error message handling
+            const errorMessage =
+                error.response?.data?.message ??
+                error.response?.message ??
+                error.message ??
+                'Failed to create agent'
+
+            toast.error(errorMessage)
+        },
+        onSettled: async (data, error, variables, context) => {
+            // Optional: Add loading state cleanup or additional actions
+        },
+    })
+
+    const handleDeleteAgent = async (
+        e?: React.MouseEvent<HTMLButtonElement>
+    ) => {
+        if (!selectedAgent) {
+            toast.warning(
+                'No agent currently selected .Please ensure an agent is selectetd'
+            )
+            return
         }
+        // delete agent
+        const response = await deleteMutation.mutateAsync(selectedAgent.id)
     }
 
     const handleCreateNew = () => {
@@ -388,7 +477,7 @@ const AgentsSettings: React.FC = () => {
         console.log('Creating new agent...')
     }
 
-    const handleSaveConfiguration = () => {
+    const handleSaveConfiguration = async () => {
         if (!selectedAgent) return
 
         const updatedAgent: UpdateAgentRequest = {
@@ -404,7 +493,10 @@ const AgentsSettings: React.FC = () => {
         }
 
         console.log('Saving agent configuration:', updatedAgent)
-        // Implement save logic here
+        mutation.mutateAsync({
+            agentId: selectedAgent.id,
+            updateData: updatedAgent,
+        })
     }
 
     const handleThemeManagement = (color: string) => {
@@ -567,6 +659,7 @@ const AgentsSettings: React.FC = () => {
                     <Button
                         variant={'default'}
                         size={'lg'}
+                        disabled={mutation.isPending}
                         className="font-bold max-md:w-full"
                         onClick={handleSaveConfiguration}
                         style={{
@@ -574,8 +667,14 @@ const AgentsSettings: React.FC = () => {
                             padding: `0 20px`,
                         }}
                     >
-                        <Save className="size-5 stroke-2" />
-                        Save Configuration
+                        {mutation.isPending ? (
+                            <LoaderIcon className="size-5 animate-spin" />
+                        ) : (
+                            <Save className="size-5 stroke-2" />
+                        )}
+                        {mutation.isPending
+                            ? 'Saving Configuration...'
+                            : 'Save Configuration'}
                     </Button>
                 </div>
             </div>
@@ -956,6 +1055,20 @@ const AgentsSettings: React.FC = () => {
                                 <span>Version History</span>
                             </button>
                         </div>
+                    </div>
+                    <div className="bg-card border border-destructive rounded-lg p-4">
+                        <h3 className="font-medium mb-3 text-destructive-foreground">
+                            Danger
+                        </h3>
+                        <Button
+                            variant={'destructive'}
+                            className="w-full font-bold items-center"
+                            size={'lg'}
+                            onClick={handleDeleteAgent}
+                        >
+                            <Trash className="size-4 stroke-2" />
+                            Delete This Agent
+                        </Button>
                     </div>
                 </div>
             </div>

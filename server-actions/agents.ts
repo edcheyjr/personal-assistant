@@ -9,7 +9,11 @@ import {
     UpdateAgentRequest,
 } from '@/types/agent'
 
-export async function createAgentAction(agentData: CreateAgentRequest) {
+export async function createAgentAction({
+    agentData,
+}: {
+    agentData: CreateAgentRequest
+}) {
     const session = await auth()
     const token = session?.user?.access_token
     return assistantService.createAgent(agentData, token)
@@ -21,10 +25,13 @@ export async function createAgentAction(agentData: CreateAgentRequest) {
 //     return assistantService.getAgent(agentId, token)
 // }
 
-export async function updateAgentAction(
-    agentId: string,
+export async function updateAgentAction({
+    agentId,
+    updateData,
+}: {
+    agentId: string
     updateData: UpdateAgentRequest
-) {
+}) {
     const session = await auth()
     const token = session?.user?.access_token
     if (!token) {

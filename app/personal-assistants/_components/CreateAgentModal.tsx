@@ -41,7 +41,10 @@ export default function CreateForm({ isOpen, onOpenChange, onClose }: Props) {
     const queryClient = useQueryClient()
 
     const formSchema = z.object({
-        name: z.string().min(1, 'Name is required'),
+        name: z
+            .string()
+            .min(1, 'Name is required')
+            .max(100, 'Agent name must not exceed 100 characters'),
         agent_type: z.string().min(1, 'Agent type is required'),
         description: z.string().min(1, 'Description is required'),
         personality: z.array(z.string()),
@@ -50,14 +53,13 @@ export default function CreateForm({ isOpen, onOpenChange, onClose }: Props) {
     const mutation = useMutation({
         mutationFn: createAgentAction,
         onSuccess: async (response) => {
-            await queryClient.invalidateQueries({
-                queryKey: [AGENTS_TAG],
-            })
-
             // More robust success handling
             if (response.status === 200 || response.status === 201) {
                 console.log('data', response.data)
                 toast.success('Successfully created agent')
+                await queryClient.invalidateQueries({
+                    queryKey: [AGENTS_TAG],
+                })
             } else {
                 if (response.status == 422) {
                     toast.error('Missing fields')
@@ -164,7 +166,7 @@ export default function CreateForm({ isOpen, onOpenChange, onClose }: Props) {
         } as CreateAgentRequest
     }
 
-    function onSubmit(values: z.infer<typeof formSchema>) {
+    async function onSubmit(values: z.infer<typeof formSchema>) {
         if (!email) {
             toast.error('User not authenticated')
             return
@@ -181,7 +183,7 @@ export default function CreateForm({ isOpen, onOpenChange, onClose }: Props) {
         // Optional: Add loading toast
         // toast.loading('Creating agent...', { id: 'create-agent' })
 
-        mutation.mutate(createAgentData)
+        mutation.mutateAsync({ agentData: createAgentData })
     }
 
     function onReset() {
