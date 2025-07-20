@@ -73,7 +73,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                     const user = await response.json()
 
                     if (user) {
-                        return user
+                        return { email: credentialDetails.username, ...user }
                     } else {
                         throw new Error('user not found')
                     }
