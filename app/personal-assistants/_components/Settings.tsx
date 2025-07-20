@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import {
     BarChart3,
     Bot,
@@ -347,7 +347,14 @@ const AgentsSettings: React.FC = () => {
         'proactive',
         'diplomatic',
     ]
-
+    useEffect(() => {
+        if (selectedAgent) {
+            setBasicInfo({
+                title: selectedAgent.name,
+                description: selectedAgent.description,
+            })
+        }
+    }, [selectedAgent])
     const loadAgentData = (agent: Agent) => {
         // Load personality sliders
         setPersonalitySliders(
@@ -531,7 +538,7 @@ const AgentsSettings: React.FC = () => {
     }
 
     return (
-        <div className="size-full bg-background text-foreground p-6">
+        <div className=" max-h-[90vh] min-[2048px]:max-h-[95vh] bg-background text-foreground p-6 overflow-y-auto">
             <div className="flex flex-wrap gap-6 justify-between items-center mb-8">
                 <div className="flex items-center gap-4">
                     <div
