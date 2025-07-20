@@ -11,6 +11,9 @@ import { toast } from 'sonner'
 import MessageLoading from '@/components/chat/MessageLoading'
 import { ToolCalls } from '@/components/chat/ToolCalls'
 import { produce } from 'immer'
+import { useSelectedAgent } from '@/providers/agents-provider'
+import { Button } from '@/components/ui/button'
+import { ViewType } from '@/types/view'
 
 interface QuickGroup {
     name: string
@@ -125,9 +128,12 @@ const messagesReducer = produce(
         }
     }
 )
-
-const VoiceAICustomerInterface: React.FC = () => {
-    const { id } = useParams()
+type Props = {
+    handleNavClick: (view: ViewType) => void
+}
+const VoiceAICustomerInterface: React.FC<Props> = ({ handleNavClick }) => {
+    // const { id } = useParams()
+    const selectedAgent = useSelectedAgent()
     const [message, setMessage] = useState<string>('')
     const [isError, setIsError] = useState<boolean>(false)
     const [isListening, setIsListening] = useState<boolean>(false)
@@ -163,13 +169,16 @@ const VoiceAICustomerInterface: React.FC = () => {
         abortControllerRef.current = new AbortController()
 
         try {
+            if (!selectedAgent) {
+                throw Error('no agent selected please select an agent')
+            }
             const {
                 data: stream,
                 error,
                 status,
             } = await streamAgentResponseAction({
                 user_input: userMessage,
-                agent_id: '7701aaeb-b495-44cd-81f4-0307bbbeefcc',
+                agent_id: selectedAgent.id,
             })
 
             if (typeof stream == 'string' || error || status !== 200) {
@@ -269,7 +278,7 @@ const VoiceAICustomerInterface: React.FC = () => {
                                         }
                                     ),
                                     isStreaming: false,
-                                    agentName: 'AI Assistant',
+                                    agentName: selectedAgent.name || 'AI Agent',
                                     isStep: false,
                                 }
                                 dispatch({
@@ -406,45 +415,68 @@ const VoiceAICustomerInterface: React.FC = () => {
         <div className="flex flex-1 flex-col overflow-hidden max-h-[92vh] min[2048px]:max-h-[95vh]">
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-6 h-full">
-                {messagesState.messages.length === 0 ? (
-                    <div className="flex h-full flex-col items-center justify-center text-center">
-                        <div className="mb-4 flex size-16 items-center justify-center rounded-full bg-purple-600 text-white text-shadow-2xs text-shadow-purple-950">
-                            <Bot className="size-8" />
+                {
+                    // add if no selected agent
+                    !selectedAgent ? (
+                        <div className="flex h-full flex-col items-center justify-center text-center">
+                            <div className="mb-4 flex size-16 items-center justify-center rounded-full bg-purple-600 text-white text-shadow-2xs text-shadow-purple-950">
+                                <Bot className="size-8" />
+                            </div>
+                            <h3 className="mb-2 text-xl font-medium">
+                                No Selected Agent
+                            </h3>
+                            <p className="mb-6 text-gray-400">
+                                Go to setting select an agent or create one
+                            </p>
+                            <Button
+                                variant="default"
+                                onClick={() => {
+                                    handleNavClick('agent-configuration')
+                                }}
+                            >
+                                Go To Settings
+                            </Button>
                         </div>
-                        <h3 className="mb-2 text-xl font-medium">
-                            Start a conversation
-                        </h3>
-                        <p className="mb-6 text-gray-400">
-                            Type a message or click the microphone
-                        </p>
-                    </div>
-                ) : (
-                    <div className="mx-auto max-w-4xl">
-                        {messagesState.messages.map((msg) => (
-                            <div key={msg.id} className="mb-4">
-                                <MessageComponent
-                                    message={msg}
-                                    isError={isError}
-                                />
-                                {msg.isStreaming && (
-                                    <div className="mt-2 flex items-center gap-2 text-sm text-gray-500">
-                                        <MessageLoading size="size-2" />
-                                        <span>Assistant is typing...</span>
-                                    </div>
-                                )}
-                                {msg.agentName &&
-                                    msg.sender === 'assistant' &&
-                                    !msg.isStreaming && (
-                                        <div className="mt-1 text-xs text-gray-500">
-                                            — {msg.agentName}
+                    ) : messagesState.messages.length === 0 ? (
+                        <div className="flex h-full flex-col items-center justify-center text-center">
+                            <div className="mb-4 flex size-16 items-center justify-center rounded-full bg-purple-600 text-white text-shadow-2xs text-shadow-purple-950">
+                                <Bot className="size-8" />
+                            </div>
+                            <h3 className="mb-2 text-xl font-medium">
+                                Start a conversation
+                            </h3>
+                            <p className="mb-6 text-gray-400">
+                                Type a message or click the microphone
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="mx-auto max-w-4xl">
+                            {messagesState.messages.map((msg) => (
+                                <div key={msg.id} className="mb-4">
+                                    <MessageComponent
+                                        message={msg}
+                                        isError={isError}
+                                    />
+                                    {msg.isStreaming && (
+                                        <div className="mt-2 flex items-center gap-2 text-sm text-gray-500">
+                                            <MessageLoading size="size-2" />
+                                            <span>Assistant is typing...</span>
                                         </div>
                                     )}
-                            </div>
-                        ))}
+                                    {msg.agentName &&
+                                        msg.sender === 'assistant' &&
+                                        !msg.isStreaming && (
+                                            <div className="mt-1 text-xs text-gray-500">
+                                                — {msg.agentName}
+                                            </div>
+                                        )}
+                                </div>
+                            ))}
 
-                        <div ref={messagesEndRef} />
-                    </div>
-                )}
+                            <div ref={messagesEndRef} />
+                        </div>
+                    )
+                }
             </div>
 
             {/* Input Area */}
@@ -478,7 +510,7 @@ const VoiceAICustomerInterface: React.FC = () => {
                         handleKeyPress={handleKeyPress}
                         handleSendMessage={handleSendMessage}
                         toggleListening={toggleListening}
-                        disabled={messagesState.isStreaming}
+                        disabled={messagesState.isStreaming || !selectedAgent}
                     />
 
                     {messagesState.isStreaming && (

@@ -4,7 +4,7 @@ import { ViewType } from '@/types/view'
 import React, { useState } from 'react'
 import SideMenuBar from './_layout/SideBar'
 
-import Chat from './_components/Chat.deprecated'
+import Chat from './_components/Chat'
 import Settings from './_components/Settings'
 import NavBar from './_layout/NavBar'
 import ThemeDemo from '@/components/ui/theme-demo'
@@ -38,7 +38,11 @@ export default function PersonalAssitants({ sessionData }: any) {
                 {/* Top Bar */}
                 <NavBar toggleSidebar={toggleSidebar} />
                 {/* Chat Area */}
-                {currentView == 'customer-interface' ? <Chat /> : <></>}
+                {currentView == 'customer-interface' ? (
+                    <Chat handleNavClick={handleNavClick} />
+                ) : (
+                    <></>
+                )}
                 {/* Agent Overview */}
                 {currentView == 'agent-overview' ? <ThemeDemo /> : <></>}
 

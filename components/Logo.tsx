@@ -11,7 +11,7 @@ const Logo = (props: Props) => {
                 <Bot className="size-5 text-white" />
             </div>
             <div className="w-full">
-                <h1 className="text-base font-bold">Personal Assistants</h1>
+                <h1 className="text-base font-bold">Multi Agents</h1>
                 <p className="text-xs text-gray-400">Sentiint.ai</p>
             </div>
         </div>
