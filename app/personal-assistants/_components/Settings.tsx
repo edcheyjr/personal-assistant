@@ -1065,9 +1065,16 @@ const AgentsSettings: React.FC = () => {
                             className="w-full font-bold items-center"
                             size={'lg'}
                             onClick={handleDeleteAgent}
+                            disabled={deleteMutation.isPending}
                         >
-                            <Trash className="size-4 stroke-2" />
-                            Delete This Agent
+                            {deleteMutation.isPending ? (
+                                <LoaderIcon className="size-4 animatet-spin" />
+                            ) : (
+                                <Trash className="size-4 stroke-2" />
+                            )}
+                            {deleteMutation.isPending
+                                ? 'Deleting This Agent ...'
+                                : ' Delete This Agent'}
                         </Button>
                     </div>
                 </div>
