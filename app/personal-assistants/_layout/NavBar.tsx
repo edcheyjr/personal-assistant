@@ -1,13 +1,16 @@
+'use client'
 import React from 'react'
 import { Headphones, Menu, Mic } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ThemeMenu } from '@/components/ThemeMenu'
 import { useThemeColor } from '@/lib/theme'
+import { useSelectedAgent } from '@/providers/agents-provider'
 type Props = {
     toggleSidebar: () => void
 }
 
 const NavBar = ({ toggleSidebar }: Props) => {
+    const selectedAgent = useSelectedAgent()
     const { themeColor } = useThemeColor()
     return (
         // TODO: use theme color
@@ -34,8 +37,7 @@ const NavBar = ({ toggleSidebar }: Props) => {
                     className="font-medium text-white text-shadow-2xs text-shadow-black"
                     // className={`font-medium text-white text-shadow-2xs text-shadow-[${themeColor}]`}
                 >
-                    {/* TODO: Title of the bot */}
-                    AI Voice Assistant
+                    {selectedAgent ? selectedAgent.name : 'AI Voice Assistant'}
                 </span>
                 {/* 
                 <span className="text-sm text-purple-200 font-semibold bg-black/5 px-2 py-1 rounded">

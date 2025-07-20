@@ -17,6 +17,7 @@ import { cn } from '@/utils/cn'
 import { signOut } from 'next-auth/react'
 import { useAgents } from '@/hooks/api/use-agents'
 import { AgentType } from '@/types/agent'
+import { useAgentContext } from '@/providers/agents-provider'
 
 type Props = {
     sidebarOpen: boolean
@@ -39,8 +40,7 @@ const SideMenuBar = ({
     toggleSidebar,
 }: Props) => {
     const [loading, setLoading] = useState(false)
-    const { data, isLoading, error } = useAgents()
-    const agents = Array.isArray(data?.data) ? data.data : []
+    const { agents, isLoading, error } = useAgentContext()
 
     const numberUniqueAgentTypes = agents.reduce(
         (set: Set<AgentType>, agent) => {
