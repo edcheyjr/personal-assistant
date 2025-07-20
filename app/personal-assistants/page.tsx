@@ -47,7 +47,7 @@ export default function PersonalAssitants({ sessionData }: any) {
                     <></>
                 )}
                 {/* Agent Overview */}
-                {currentView == 'agent-overview' ? <ThemeDemo /> : <></>}
+                {/* {currentView == 'agent-overview' ? <ThemeDemo /> : <></>} */}
 
                 {/* Setting */}
                 {currentView == 'agent-configuration' ? <Settings /> : <></>}
