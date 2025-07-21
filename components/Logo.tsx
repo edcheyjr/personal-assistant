@@ -1,13 +1,18 @@
+'use client'
+import { useThemeColor } from '@/providers/color-theme-provider'
 import { Bot } from 'lucide-react'
 import React from 'react'
 
 type Props = {}
 
 const Logo = (props: Props) => {
+    const { themeColor } = useThemeColor()
     return (
         <div className="flex items-center gap-3 ">
-            {/* TODO: current thme should change here also */}
-            <div className="flex p-2 items-center justify-center rounded-md bg-purple-600">
+            <div
+                style={{ backgroundColor: themeColor }}
+                className="flex p-2 items-center justify-center rounded-md bg-purple-600"
+            >
                 <Bot className="size-5 text-white" />
             </div>
             <div className="w-full">

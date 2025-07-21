@@ -27,8 +27,9 @@ function ThemedTextarea({
 
     const themedStyle = {
         ...style,
+        outlineColor: themeColor,
         ...generateThemeCSS(themeColor),
-    }
+    } as React.CSSProperties
 
     return (
         <textarea
