@@ -1,8 +1,5 @@
 import { auth } from '@/lib/auth'
 import { assistantService } from '@/service/assistant'
-import { ApiResponse } from '@/types/agent'
-import { getAPIBaseURL } from '@/utils/baseUrl'
-import { CONTENT_TYPE, unknownErr } from '@/utils/constants'
 import { NextRequest, NextResponse } from 'next/server'
 
 // Define the Agent type (adjust based on your actual Agent interface)
@@ -19,7 +16,6 @@ export async function GET(req: NextRequest) {
 
         // Get authorization token from headers
         const token = session?.user.access_token
-        const search = (req.nextUrl.searchParams.get('q') as string) || ''
         const limit =
             parseInt(req.nextUrl.searchParams.get('limit') as string) || 100
         const skip =

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createParser, ParseError } from 'eventsource-parser'
 import { fetchWithTimeout } from '@/utils/fetchWithTimeout'
 import { logger } from '@/utils/logger'
+import { ApiResponse } from '@/types/agent'
 
 export type ChatGPTAgent = 'user' | 'system'
 
@@ -14,46 +15,13 @@ export interface AccessToken {
     access_token: string
 }
 
-export async function textStream<T>(
-    url: string,
-    payload: T,
-    token?: AccessToken
-) {
+export async function textStream<T>(res: ApiResponse<T>) {
     const encoder = new TextEncoder()
     const decoder = new TextDecoder()
 
     let counter = 0
-
-    let res: Response
-    try {
-        res = await fetchWithTimeout(url, {
-            method: 'POST',
-            headers: {
-                accept: '*/*',
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${token?.access_token}`,
-            },
-            body: JSON.stringify(payload),
-            timeout: 1000 * 60 * 5, // 5 mins to abort
-        })
-    } catch (error) {
-        logger(error, 'Network error in textStream')
-        return 'Check your internet connection and try again.'
-    }
-
     if (res.status === 401) {
-        return "You do not have enough tokens to make this request. Please purchase more tokens, for me to be able to assist you further. This can also be because, you're account is not verified. Make sure you'r account is verified."
-    }
-
-    if (!res.ok && res.status !== 401) {
-        logger(`${res.status} ${res.statusText}`, 'Error', 'error')
-        const errorData = await res.json().catch(() => ({
-            error: { message: 'Unknown error occurred.' },
-        }))
-        const errorMessage =
-            errorData.error?.message ||
-            'An error occurred while processing your request.'
-        return `Error: ${errorMessage}`
+        return 'You are unauthorized to make this request.'
     }
 
     const stream = new ReadableStream({
@@ -89,7 +57,7 @@ export async function textStream<T>(
                     }
                 },
             })
-            for await (const chunk of res.body as any) {
+            for await (const chunk of res.data as any) {
                 parser.feed(decoder.decode(chunk))
             }
         },

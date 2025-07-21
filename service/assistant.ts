@@ -278,7 +278,6 @@ class AssistantService {
                     status: response.status,
                 }
             }
-            console.log('response.body', response.body)
             return {
                 data: response.body!,
                 status: response.status,

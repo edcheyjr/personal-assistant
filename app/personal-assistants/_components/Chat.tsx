@@ -5,8 +5,7 @@ import { Bot } from 'lucide-react'
 import { AgentEvent, Message } from '@/types/message'
 import { default as MessageComponent } from '@/components/chat/Message'
 import MessageInput from '@/components/chat/MessageInput'
-import { useParams } from 'next/navigation'
-import { streamAgentResponseAction } from '@/server-actions/agents'
+
 import { toast } from 'sonner'
 import MessageLoading from '@/components/chat/MessageLoading'
 import { ToolCalls } from '@/components/chat/ToolCalls'
@@ -173,25 +172,19 @@ const VoiceAICustomerInterface: React.FC<Props> = ({ handleNavClick }) => {
             if (!selectedAgent) {
                 throw Error('no agent selected please select an agent')
             }
-            const {
-                data: stream,
-                error,
-                status,
-            } = await streamAgentResponseAction({
-                user_input: userMessage,
-                agent_id: selectedAgent.id,
-            })
-            console.log('stream', stream)
 
-            if (typeof stream == 'string' || error || status !== 200) {
+            const response = await fetch(
+                `/api/agents/chat?input=${userMessage}&id=${selectedAgent.id}`
+            )
+
+            // Check if response is not ok (HTTP error status)
+            if (!response.ok) {
+                const errorText = await response.text()
                 const errorMessage: StreamingMessage = {
                     id: Date.now(),
                     text:
-                        typeof stream == 'string'
-                            ? stream
-                            : error
-                            ? error
-                            : 'Unknown error occurred',
+                        errorText ||
+                        `HTTP Error: ${response.status} ${response.statusText}`,
                     sender: 'system',
                     timestamp: new Date().toLocaleTimeString([], {
                         hour: '2-digit',
@@ -201,9 +194,13 @@ const VoiceAICustomerInterface: React.FC<Props> = ({ handleNavClick }) => {
                 }
                 setIsError(true)
                 dispatch({ type: 'ADD_ERROR', error: errorMessage })
-                toast.error(error || 'An error occurred')
+                toast.error('An error occurred')
                 return
             }
+
+            const stream = response.body
+
+            console.log('🔍 Client received stream:', stream)
 
             if (!stream) {
                 const noStreamError: StreamingMessage = {
@@ -221,6 +218,7 @@ const VoiceAICustomerInterface: React.FC<Props> = ({ handleNavClick }) => {
             }
 
             const reader = stream.getReader()
+            console.log('📖 Client reader:', reader)
             const decoder = new TextDecoder()
 
             const streamingMessageId = Date.now()
@@ -234,100 +232,172 @@ const VoiceAICustomerInterface: React.FC<Props> = ({ handleNavClick }) => {
             let hasReceivedContent = false
             let accumulatedContent = ''
 
+            // Helper function to safely parse JSON with better error handling
+            const safeJsonParse = (jsonString: string) => {
+                try {
+                    return { success: true, data: JSON.parse(jsonString) }
+                } catch (error) {
+                    return { success: false, error }
+                }
+            }
+
+            // Process a complete SSE line
+            const processSseLine = (line: string) => {
+                console.log('📝 Processing line:', line)
+
+                if (!line.trim().startsWith('data: ')) {
+                    if (line.trim()) {
+                        console.warn(
+                            '⚠️ Received non-SSE formatted line:',
+                            line.trim()
+                        )
+
+                        const errorMessage: StreamingMessage = {
+                            id: Date.now(),
+                            text: line.trim(),
+                            sender: 'system',
+                            timestamp: new Date().toLocaleTimeString([], {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                            }),
+                            isStreaming: false,
+                        }
+                        setIsError(true)
+                        dispatch({ type: 'ADD_ERROR', error: errorMessage })
+                        toast.error('An error occurred')
+                        return false // Indicate error
+                    }
+                    return true // Continue processing
+                }
+
+                const jsonString = line.slice(6).trim()
+                console.log('🔧 Extracted JSON:', jsonString)
+
+                if (!jsonString) {
+                    return true // Skip empty data lines
+                }
+
+                const parseResult = safeJsonParse(jsonString)
+                if (!parseResult.success) {
+                    console.warn('❌ Failed to parse JSON line:', jsonString)
+                    console.warn('Parse error:', parseResult.error)
+                    return true // Continue processing other lines
+                }
+
+                const eventData = parseResult.data
+                console.log('📊 Parsed event data:', eventData)
+
+                if (eventData.type === 'content' && eventData.content) {
+                    hasReceivedContent = true
+                    accumulatedContent += eventData.content
+                    console.log(
+                        '➕ Accumulated content so far:',
+                        accumulatedContent
+                    )
+
+                    dispatch({
+                        type: 'UPDATE_STREAMING_CONTENT',
+                        messageId: streamingMessageId,
+                        content: eventData.content,
+                    })
+                } else if (eventData.type === 'end') {
+                    console.log(
+                        '🏁 Stream end detected, final content:',
+                        accumulatedContent
+                    )
+
+                    const finalMessage: StreamingMessage = {
+                        id: streamingMessageId,
+                        text: accumulatedContent,
+                        sender: 'assistant',
+                        timestamp: new Date().toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                        }),
+                        isStreaming: false,
+                        agentName: selectedAgent.name || 'AI Agent',
+                        isStep: false,
+                    }
+
+                    dispatch({
+                        type: 'FINISH_RESPONSE',
+                        finalMessage,
+                    })
+                    return 'end' // Signal end of stream
+                }
+
+                return true // Continue processing
+            }
+
             while (true) {
                 const { done, value } = await reader.read()
-                console.log('value', value)
-                if (done) break
+
+                if (done) {
+                    console.log('✅ Client stream finished')
+                    break
+                }
 
                 const chunk = decoder.decode(value, { stream: true })
+                console.log('📦 Client received chunk:', chunk)
+
+                // Add chunk to buffer
                 buffer += chunk
 
-                const lines = buffer.split('\n')
-                buffer = lines.pop() || ''
+                // Process complete lines from buffer
+                while (true) {
+                    // Look for complete lines (ending with \n)
+                    const newlineIndex = buffer.indexOf('\n')
 
-                for (const line of lines) {
-                    if (line.startsWith('data: ')) {
-                        const jsonString = line.slice(6).trim()
+                    if (newlineIndex === -1) {
+                        // No complete line found, wait for more data
+                        break
+                    }
 
-                        if (!jsonString) {
-                            continue
-                        }
+                    // Extract the complete line (excluding the newline)
+                    const line = buffer.substring(0, newlineIndex)
+                    // Remove the processed line from buffer
+                    buffer = buffer.substring(newlineIndex + 1)
 
-                        try {
-                            const eventData = JSON.parse(jsonString)
+                    // Process the complete line
+                    const result = processSseLine(line)
 
-                            if (
-                                eventData.type === 'content' &&
-                                eventData.content
-                            ) {
-                                hasReceivedContent = true
-                                accumulatedContent += eventData.content // Accumulate locally
-                                dispatch({
-                                    type: 'UPDATE_STREAMING_CONTENT',
-                                    messageId: streamingMessageId,
-                                    content: eventData.content,
-                                })
-                            } else if (eventData.type === 'end') {
-                                const finalMessage: StreamingMessage = {
-                                    id: streamingMessageId,
-                                    text: accumulatedContent, // Use local accumulator
-                                    sender: 'assistant',
-                                    timestamp: new Date().toLocaleTimeString(
-                                        [],
-                                        {
-                                            hour: '2-digit',
-                                            minute: '2-digit',
-                                        }
-                                    ),
-                                    isStreaming: false,
-                                    agentName: selectedAgent.name || 'AI Agent',
-                                    isStep: false,
-                                }
-                                dispatch({
-                                    type: 'FINISH_RESPONSE',
-                                    finalMessage,
-                                })
-                                return
-                            }
-                        } catch (parseError) {
-                            console.warn(
-                                'Failed to parse JSON line:',
-                                jsonString
-                            )
-                            console.warn('Parse error:', parseError)
-                            continue
-                        }
+                    if (result === 'end') {
+                        // Stream ended, clean up and return
+                        return
+                    } else if (result === false) {
+                        // Error occurred, stop processing
+                        return
                     }
                 }
             }
 
-            // Handle any remaining buffer
-            if (buffer.trim() && buffer.startsWith('data: ')) {
-                const jsonString = buffer.slice(6).trim()
-                if (jsonString) {
-                    try {
-                        const eventData = JSON.parse(jsonString)
-                        if (eventData.type === 'content' && eventData.content) {
-                            accumulatedContent += eventData.content // Accumulate locally
-                            dispatch({
-                                type: 'UPDATE_STREAMING_CONTENT',
-                                messageId: streamingMessageId,
-                                content: eventData.content,
-                            })
-                        }
-                    } catch (parseError) {
-                        console.warn(
-                            'Failed to parse final buffer JSON:',
-                            jsonString
-                        )
+            // Handle any remaining buffer content after stream ends
+            if (buffer.trim()) {
+                console.log('🔄 Processing final buffer:', buffer.trim())
+
+                // Process any remaining complete lines in buffer
+                const remainingLines = buffer
+                    .split('\n')
+                    .filter((line) => line.trim())
+
+                for (const line of remainingLines) {
+                    const result = processSseLine(line)
+                    if (result === 'end' || result === false) {
+                        return
                     }
                 }
             }
 
+            // Finish the response if we received content but no explicit end event
             if (hasReceivedContent) {
+                console.log(
+                    '✅ Finishing response with accumulated content:',
+                    accumulatedContent
+                )
+
                 const finalMessage: StreamingMessage = {
                     id: streamingMessageId,
-                    text: accumulatedContent, // Use local accumulator
+                    text: accumulatedContent,
                     sender: 'assistant',
                     timestamp: new Date().toLocaleTimeString([], {
                         hour: '2-digit',
@@ -339,11 +409,12 @@ const VoiceAICustomerInterface: React.FC<Props> = ({ handleNavClick }) => {
                 }
                 dispatch({ type: 'FINISH_RESPONSE', finalMessage })
             } else {
+                console.log('⚠️ No content received, stopping stream')
                 dispatch({ type: 'STOP_STREAMING' })
             }
         } catch (error) {
             setIsError(true)
-            console.error('Stream error:', error)
+            console.error('💥 Stream error:', error)
 
             const errorMessage: StreamingMessage = {
                 id: Date.now(),
