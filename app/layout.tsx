@@ -3,7 +3,8 @@ import { Geist, Geist_Mono } from 'next/font/google'
 import './globals.css'
 import Providers from '@/providers/Providers'
 import { Toaster } from '@/components/ui/sonner'
-import { MAX_TOAST_NOTIFICATION_COUNT } from '@/utils/constants'
+import { ColorKey, MAX_TOAST_NOTIFICATION_COUNT } from '@/utils/constants'
+import { cookies } from 'next/headers'
 
 const geistSans = Geist({
     variable: '--font-geist-sans',
@@ -20,11 +21,14 @@ export const metadata: Metadata = {
     description: 'create your very own personal assistant',
 }
 
-export default function RootLayout({
+export default async function RootLayout({
     children,
 }: Readonly<{
     children: React.ReactNode
 }>) {
+    const cookieStore = await cookies()
+    const themeColor = cookieStore.get(ColorKey)
+    console.log(themeColor?.name, themeColor?.value)
     return (
         <html lang="en" suppressHydrationWarning>
             <body
@@ -35,6 +39,7 @@ export default function RootLayout({
                         attribute="class"
                         defaultTheme="system"
                         enableSystem
+                        initialThemeColor={themeColor?.value}
                     >
                         {children}
                         <Toaster

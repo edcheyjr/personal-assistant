@@ -3,8 +3,8 @@ import React from 'react'
 import { Headphones, Menu, Mic } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ThemeMenu } from '@/components/ThemeMenu'
-import { useThemeColor } from '@/lib/theme'
 import { useSelectedAgent } from '@/providers/agents-provider'
+import { useThemeColor } from '@/providers/color-theme-provider'
 type Props = {
     toggleSidebar: () => void
 }

@@ -14,6 +14,7 @@ import { produce } from 'immer'
 import { useSelectedAgent } from '@/providers/agents-provider'
 import { Button } from '@/components/ui/button'
 import { ViewType } from '@/types/view'
+import { useThemeColor } from '@/providers/color-theme-provider'
 
 interface QuickGroup {
     name: string
@@ -132,6 +133,7 @@ type Props = {
     handleNavClick: (view: ViewType) => void
 }
 const VoiceAICustomerInterface: React.FC<Props> = ({ handleNavClick }) => {
+    const { themeColor } = useThemeColor()
     // const { id } = useParams()
     const selectedAgent = useSelectedAgent()
     const [message, setMessage] = useState<string>('')
@@ -148,7 +150,6 @@ const VoiceAICustomerInterface: React.FC<Props> = ({ handleNavClick }) => {
         agentName: '',
         streamingContent: '',
     })
-    console.log('messageState', messagesState)
 
     const messagesEndRef = useRef<HTMLDivElement>(null)
     const abortControllerRef = useRef<AbortController | null>(null)
@@ -180,6 +181,7 @@ const VoiceAICustomerInterface: React.FC<Props> = ({ handleNavClick }) => {
                 user_input: userMessage,
                 agent_id: selectedAgent.id,
             })
+            console.log('stream', stream)
 
             if (typeof stream == 'string' || error || status !== 200) {
                 const errorMessage: StreamingMessage = {
@@ -224,7 +226,7 @@ const VoiceAICustomerInterface: React.FC<Props> = ({ handleNavClick }) => {
             const streamingMessageId = Date.now()
             dispatch({
                 type: 'START_STREAMING',
-                agentName: 'AI Assistant',
+                agentName: selectedAgent.name,
                 messageId: streamingMessageId,
             })
 
@@ -234,6 +236,7 @@ const VoiceAICustomerInterface: React.FC<Props> = ({ handleNavClick }) => {
 
             while (true) {
                 const { done, value } = await reader.read()
+                console.log('value', value)
                 if (done) break
 
                 const chunk = decoder.decode(value, { stream: true })
@@ -265,7 +268,6 @@ const VoiceAICustomerInterface: React.FC<Props> = ({ handleNavClick }) => {
                                     content: eventData.content,
                                 })
                             } else if (eventData.type === 'end') {
-                                // Finalize the message using local accumulated content
                                 const finalMessage: StreamingMessage = {
                                     id: streamingMessageId,
                                     text: accumulatedContent, // Use local accumulator
@@ -322,7 +324,6 @@ const VoiceAICustomerInterface: React.FC<Props> = ({ handleNavClick }) => {
                 }
             }
 
-            // If we received content but no explicit end, finalize the message
             if (hasReceivedContent) {
                 const finalMessage: StreamingMessage = {
                     id: streamingMessageId,
@@ -333,7 +334,7 @@ const VoiceAICustomerInterface: React.FC<Props> = ({ handleNavClick }) => {
                         minute: '2-digit',
                     }),
                     isStreaming: false,
-                    agentName: 'AI Assistant',
+                    agentName: selectedAgent.name,
                     isStep: false,
                 }
                 dispatch({ type: 'FINISH_RESPONSE', finalMessage })
@@ -419,7 +420,10 @@ const VoiceAICustomerInterface: React.FC<Props> = ({ handleNavClick }) => {
                     // add if no selected agent
                     !selectedAgent ? (
                         <div className="flex h-full flex-col items-center justify-center text-center">
-                            <div className="mb-4 flex size-16 items-center justify-center rounded-full bg-purple-600 text-white text-shadow-2xs text-shadow-purple-950">
+                            <div
+                                style={{ backgroundColor: themeColor }}
+                                className="mb-4 flex size-16 items-center justify-center rounded-full bg-purple-600 text-white text-shadow-2xs text-shadow-purple-950"
+                            >
                                 <Bot className="size-8" />
                             </div>
                             <h3 className="mb-2 text-xl font-medium">
@@ -439,7 +443,10 @@ const VoiceAICustomerInterface: React.FC<Props> = ({ handleNavClick }) => {
                         </div>
                     ) : messagesState.messages.length === 0 ? (
                         <div className="flex h-full flex-col items-center justify-center text-center">
-                            <div className="mb-4 flex size-16 items-center justify-center rounded-full bg-purple-600 text-white text-shadow-2xs text-shadow-purple-950">
+                            <div
+                                style={{ backgroundColor: themeColor }}
+                                className="mb-4 flex size-16 items-center justify-center rounded-full bg-purple-600 text-white text-shadow-2xs text-shadow-purple-950"
+                            >
                                 <Bot className="size-8" />
                             </div>
                             <h3 className="mb-2 text-xl font-medium">
@@ -489,6 +496,13 @@ const VoiceAICustomerInterface: React.FC<Props> = ({ handleNavClick }) => {
                         </span>
                         {quickGroups.map((group, index) => (
                             <button
+                                style={
+                                    selectedGroup === group.name
+                                        ? {
+                                              backgroundColor: themeColor,
+                                          }
+                                        : undefined
+                                }
                                 key={group.name + index}
                                 onClick={() => setSelectedGroup(group.name)}
                                 className={`whitespace-nowrap rounded-full px-3 py-1 text-sm transition-colors ${

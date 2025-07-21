@@ -9,10 +9,12 @@ import { ThemeProvider } from './theme-provider'
 import QueryProvider from './query-provider'
 import { Session } from 'next-auth'
 import { AgentProvider } from './agents-provider'
+import { ColorThemeProvider } from './color-theme-provider'
 
 type ProviderType = {
     session?: Session
     children: React.ReactNode
+    initialThemeColor?: string
 }
 
 /**
@@ -23,13 +25,16 @@ type ProviderType = {
 export default function Providers({
     children,
     session,
+    initialThemeColor,
     ...props
 }: ProviderType & ThemeProviderProps) {
     return (
         <SessionProvider session={session}>
             <QueryProvider>
                 <ThemeProvider {...props}>
-                    <AgentProvider>{children}</AgentProvider>
+                    <ColorThemeProvider initialThemeColor={initialThemeColor}>
+                        <AgentProvider>{children}</AgentProvider>
+                    </ColorThemeProvider>
                 </ThemeProvider>
             </QueryProvider>
         </SessionProvider>

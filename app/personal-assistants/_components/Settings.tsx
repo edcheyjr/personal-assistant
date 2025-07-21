@@ -47,6 +47,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { deleteAgentAction, updateAgentAction } from '@/server-actions/agents'
 import { toast } from 'sonner'
 import { logger } from '@/utils/logger'
+import { useThemeColor } from '@/providers/color-theme-provider'
+import { colorOptions } from '@/lib/theme'
 
 // Updated interface for personality sliders to match our types
 interface PersonalitySliders {
@@ -298,7 +300,8 @@ export const AgentTypeSelection: { value: AgentType; label: string }[] = [
 
 const AgentsSettings: React.FC = () => {
     const queryClient = useQueryClient()
-
+    const { themeColor, setThemeColor } = useThemeColor()
+    console.log('themeColor', themeColor)
     const { agents, isLoading, error, refreshAgents } = useAgentContext()
     const { clearSelection, selectAgent, selectedAgent } = useAgentSelection()
     const selectCommunicationTone = communicationTones.map((tone) => ({
@@ -313,7 +316,6 @@ const AgentsSettings: React.FC = () => {
     const [openCreateModal, setOpenCreateModal] = useState(false)
     const [activeTab, setActiveTab] = useState<TabType>('personality')
     const [selectedIcon, setSelectedIcon] = useState<string>('bot')
-    const [selectedColor, setSelectedColor] = useState<string>('#8B5CF6')
     const [personalityTraits, setPersonalityTraits] = useState<string[]>([
         'analytical',
         'efficient',
@@ -334,17 +336,6 @@ const AgentsSettings: React.FC = () => {
         useState<CommunicationTone>('Professional')
     const [agentType, setAgentType] = useState<AgentType>('support_assistant')
     const [testInput, setTestInput] = useState<string>('')
-
-    const colorOptions: string[] = [
-        '#8B5CF6',
-        '#3B82F6',
-        '#10B981',
-        '#EF4444',
-        '#F59E0B',
-        '#6366F1',
-        '#6B7280',
-        '#A855F7',
-    ]
 
     const iconOptions: IconOption[] = [
         { id: 'bot', icon: Bot, label: 'Bot' },
@@ -509,7 +500,7 @@ const AgentsSettings: React.FC = () => {
     }
 
     const handleThemeManagement = (color: string) => {
-        setSelectedColor(color)
+        setThemeColor(color)
         setStorageItem(ColorKey, color)
     }
 
@@ -548,7 +539,7 @@ const AgentsSettings: React.FC = () => {
             style={
                 active
                     ? {
-                          backgroundColor: selectedColor,
+                          backgroundColor: themeColor,
                       }
                     : undefined
             }
@@ -620,7 +611,7 @@ const AgentsSettings: React.FC = () => {
                         <AgentSelector
                             agents={agents}
                             selectedAgent={null}
-                            selectedColor={selectedColor}
+                            selectedColor={themeColor}
                             onSelectAgent={selectAgent}
                             onCreateNew={handleCreateNew}
                         />
@@ -639,7 +630,7 @@ const AgentsSettings: React.FC = () => {
                 >
                     <div
                         className="size-12 min-w-12 bg-primary rounded-lg flex items-center justify-center "
-                        style={{ backgroundColor: selectedColor }}
+                        style={{ backgroundColor: themeColor }}
                     >
                         <Brain className="size-6 text-primary-foreground" />
                     </div>
@@ -662,7 +653,7 @@ const AgentsSettings: React.FC = () => {
                                 loadAgentData(agent)
                             }}
                             onCreateNew={handleCreateNew}
-                            selectedColor={selectedColor}
+                            selectedColor={themeColor}
                         />
                     </div>
                     <Button
@@ -672,7 +663,7 @@ const AgentsSettings: React.FC = () => {
                         className="font-bold max-md:w-full"
                         onClick={handleSaveConfiguration}
                         style={{
-                            backgroundColor: selectedColor,
+                            backgroundColor: themeColor,
                             padding: `0 20px`,
                         }}
                     >
@@ -696,7 +687,7 @@ const AgentsSettings: React.FC = () => {
                                 id="personality"
                                 label="Personality"
                                 icon={Users}
-                                selectedColor={selectedColor}
+                                selectedColor={themeColor}
                                 active={activeTab === 'personality'}
                                 onClick={() => setActiveTab('personality')}
                             />
@@ -704,14 +695,14 @@ const AgentsSettings: React.FC = () => {
                                 id="knowledge"
                                 label="Knowledge Base"
                                 icon={BarChart3}
-                                selectedColor={selectedColor}
+                                selectedColor={themeColor}
                                 active={activeTab === 'knowledge'}
                                 onClick={() => setActiveTab('knowledge')}
                             />
                             <TabButton
                                 id="tools"
                                 label="Tools & Skills"
-                                selectedColor={selectedColor}
+                                selectedColor={themeColor}
                                 icon={Zap}
                                 active={activeTab === 'tools'}
                                 onClick={() => setActiveTab('tools')}
@@ -719,7 +710,7 @@ const AgentsSettings: React.FC = () => {
                             <TabButton
                                 id="advanced"
                                 label="Advanced"
-                                selectedColor={selectedColor}
+                                selectedColor={themeColor}
                                 icon={Settings}
                                 active={activeTab === 'advanced'}
                                 onClick={() => setActiveTab('advanced')}
@@ -822,8 +813,8 @@ const AgentsSettings: React.FC = () => {
                                                                 id
                                                                     ? {
                                                                           borderColor:
-                                                                              selectedColor,
-                                                                          background: `${selectedColor}33`,
+                                                                              themeColor,
+                                                                          background: `${themeColor}33`,
                                                                       }
                                                                     : undefined
                                                             }
@@ -848,8 +839,7 @@ const AgentsSettings: React.FC = () => {
                                                             )
                                                         }
                                                         className={`w-8 h-8 rounded border-2 transition-all ${
-                                                            selectedColor ===
-                                                            color
+                                                            themeColor === color
                                                                 ? 'border-foreground scale-110'
                                                                 : 'border-border hover:border-foreground/50'
                                                         }`}
@@ -874,7 +864,7 @@ const AgentsSettings: React.FC = () => {
                                                 key={trait}
                                                 className="px-3 py-1 bg-primary/20 text-primary rounded-full text-sm flex items-center gap-1"
                                                 style={{
-                                                    background: `${selectedColor}88`,
+                                                    background: `${themeColor}88`,
                                                 }}
                                             >
                                                 {trait}
@@ -901,7 +891,7 @@ const AgentsSettings: React.FC = () => {
                                                         addTrait(trait)
                                                     }
                                                     style={{
-                                                        background: `${selectedColor}22`,
+                                                        background: `${themeColor}22`,
                                                     }}
                                                     className="px-3 py-1 bg-secondary hover:bg-secondary/80 text-secondary-foreground rounded-full text-sm transition-colors"
                                                 >
@@ -917,7 +907,7 @@ const AgentsSettings: React.FC = () => {
                                         Personality Sliders
                                     </h3>
                                     <SliderComponent
-                                        selectedColor={selectedColor}
+                                        selectedColor={themeColor}
                                         label="🎭 Formal"
                                         value={personalitySliders.formal}
                                         onChange={(value) =>
@@ -926,7 +916,7 @@ const AgentsSettings: React.FC = () => {
                                         percentage={personalitySliders.formal}
                                     />
                                     <SliderComponent
-                                        selectedColor={selectedColor}
+                                        selectedColor={themeColor}
                                         label="😊 Friendly"
                                         value={personalitySliders.friendly}
                                         onChange={(value) =>
@@ -935,7 +925,7 @@ const AgentsSettings: React.FC = () => {
                                         percentage={personalitySliders.friendly}
                                     />
                                     <SliderComponent
-                                        selectedColor={selectedColor}
+                                        selectedColor={themeColor}
                                         label="💼 Professional"
                                         value={personalitySliders.professional}
                                         onChange={(value) =>
@@ -946,7 +936,7 @@ const AgentsSettings: React.FC = () => {
                                         }
                                     />
                                     <SliderComponent
-                                        selectedColor={selectedColor}
+                                        selectedColor={themeColor}
                                         label="💬 Conversational"
                                         value={
                                             personalitySliders.conversational
@@ -962,7 +952,7 @@ const AgentsSettings: React.FC = () => {
                                         }
                                     />
                                     <SliderComponent
-                                        selectedColor={selectedColor}
+                                        selectedColor={themeColor}
                                         label="😄 Humorous"
                                         value={personalitySliders.humorous}
                                         onChange={(value) =>
@@ -971,7 +961,7 @@ const AgentsSettings: React.FC = () => {
                                         percentage={personalitySliders.humorous}
                                     />
                                     <SliderComponent
-                                        selectedColor={selectedColor}
+                                        selectedColor={themeColor}
                                         label="🗣️ Verbosity"
                                         value={personalitySliders.verbose}
                                         onChange={(value) =>

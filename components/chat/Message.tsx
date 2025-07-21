@@ -1,27 +1,20 @@
 import { MessageProps } from '@/types/message'
 import React from 'react'
 import { cn } from '@/utils/cn'
-import { useThemeColor, generateThemeCSS } from '@/lib/theme'
+import { generateThemeCSS, getThemeRGB } from '@/lib/theme'
 import MarkdownWrapper from '../MarkdownWrapper'
+import { useThemeColor } from '@/providers/color-theme-provider'
 
 const Message: React.FC<MessageProps> = ({ message, isError }) => {
     const { themeColor } = useThemeColor()
 
+    const themeRGB = getThemeRGB(themeColor)
+
     const userMessageStyle = {
         backgroundColor: themeColor,
         ...generateThemeCSS(themeColor),
+        color: `${themeRGB.r} ${themeRGB.g} ${themeRGB.b}`,
     }
-
-    const getThemeRGB = (color: string) => {
-        const hex = color.replace('#', '')
-        const r = parseInt(hex.substr(0, 2), 16)
-        const g = parseInt(hex.substr(2, 2), 16)
-        const b = parseInt(hex.substr(4, 2), 16)
-        return { r, g, b }
-    }
-
-    const themeRGB = getThemeRGB(themeColor)
-
     return (
         <div
             className={cn(

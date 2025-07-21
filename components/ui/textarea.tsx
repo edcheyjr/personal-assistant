@@ -1,7 +1,8 @@
 import * as React from 'react'
 
 import { cn } from '@/utils/cn'
-import { generateThemeCSS, useThemeColor } from '@/lib/theme'
+import { generateThemeCSS } from '@/lib/theme'
+import { useThemeColor } from '@/providers/color-theme-provider'
 
 function Textarea({ className, ...props }: React.ComponentProps<'textarea'>) {
     return (

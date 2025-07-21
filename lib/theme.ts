@@ -1,10 +1,6 @@
-import { ColorKey } from '@/utils/constants'
-import { getStorageItem, setStorageItem } from '@/utils/localstorageAccess'
-import React from 'react'
-
 // Theme colors that would be stored in localStorage
 export const colorOptions: string[] = [
-    '#8B5CF6', // Purple
+    '#8B5CF6', // Purple or '#af46fc'
     '#3B82F6', // Blue
     '#10B981', // Green
     '#EF4444', // Red
@@ -14,29 +10,24 @@ export const colorOptions: string[] = [
     '#A855F7', // Violet
 ]
 
-// Hook to get theme color (in real app, this would use localStorage)
-export function useThemeColor() {
-    const [themeColor, setThemeColor] = React.useState(colorOptions[0])
-
-    React.useEffect(() => {
-        const color = getStorageItem<string>(ColorKey)
-        if (color) {
-            setThemeColor(color)
-        } else {
-            setStorageItem<string>(ColorKey, colorOptions[0])
-        }
-    }, [])
-
-    return { themeColor, setThemeColor }
+// Rgb
+export const getThemeRGB = (color: string) => {
+    const hex = color.replace('#', '')
+    const r = parseInt(hex.substring(0, 2), 16) || 0
+    const g = parseInt(hex.substring(2, 4), 16) || 0
+    const b = parseInt(hex.substring(4, 6), 16) || 0
+    return { r, g, b }
 }
 
 // Generate CSS variables for the theme color
 export function generateThemeCSS(color: string) {
-    // Convert hex to RGB for better color manipulation
-    const hex = color.replace('#', '')
-    const r = parseInt(hex.substr(0, 2), 16)
-    const g = parseInt(hex.substr(2, 2), 16)
-    const b = parseInt(hex.substr(4, 2), 16)
+    // Remove # if present and ensure we have a valid hex string
+    const hex = color.replace('#', '').padEnd(6, '0').substring(0, 6)
+
+    // Parse RGB values with fallbacks to prevent NaN
+    const r = parseInt(hex.substring(0, 2), 16) || 0
+    const g = parseInt(hex.substring(2, 4), 16) || 0
+    const b = parseInt(hex.substring(4, 6), 16) || 0
 
     return {
         '--theme-primary': `${r} ${g} ${b}`,
