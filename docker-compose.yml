@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+    app:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        ports:
+            - '8080:3010'
+        environment:
+            - AUTH_SECRET=2FF51F714B1E9B31C6B313C9AA9487
+            - APP_ENV=production
+            - NEXT_PUBLIC_DEV_BASE_URL=http://10.2.26.13/api/v1
+            - NEXT_PUBLIC_PRODUCTION_BASE_URL=http://10.2.26.13/api/v1
+        volumes:
+            - .:/app
+            - /app/node_modules
+        command: pnpm start -p 3010

@@ -1,0 +1,49 @@
+# This server block handles HTTP requests and proxies them to port 3010
+server {
+    listen 80;
+    server_name aerialgis.com www.aerialgis.com;
+
+    # Proxy requests to the application running on port 3010
+    location / {
+        proxy_pass http://localhost;  # Forward to Docker container on port 80
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+# Redirect HTTP traffic to HTTPS and handle Certbot challenges
+server {
+    listen 80;
+    server_name aerialgis.com www.aerialgis.com;
+
+    # Redirect all HTTP requests to HTTPS
+    location / {
+        return 301 https://$host$request_uri;
+    }
+
+    # Handle Let's Encrypt ACME Challenge for Certbot
+    location /.well-known/acme-challenge/ {
+        root /var/www/html;
+    }
+}
+
+# Serve HTTPS and proxy requests to Docker container running on port 8080
+server {
+    listen 443 ssl; # managed by Certbot
+    server_name aerialgis.com www.aerialgis.com;
+
+    ssl_certificate /etc/letsencrypt/live/aerialgis.com/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/aerialgis.com/privkey.pem; # managed by Certbot
+    include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+
+    # Proxy requests to the Docker container running on port 8080
+    location / {
+        proxy_pass http://localhost:8080;  # Forward requests to Docker container on port 8080
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
