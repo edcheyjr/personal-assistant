@@ -25,14 +25,25 @@ export async function textStream<T>(res: ApiResponse<T>) {
 
     const stream = new ReadableStream({
         async start(controller) {
+            let isClosed = false
+
             const parser = createParser({
                 onError(error: ParseError) {
                     console.error('Error parsing event:', error)
-                    controller.error(error)
+                    if (!isClosed) {
+                        isClosed = true
+                        controller.error(error)
+                    }
                 },
                 onEvent(event) {
+                    // Skip processing if controller is already closed
+                    if (isClosed) {
+                        return
+                    }
+
                     const data = event.data
                     if (data === '[DONE]') {
+                        isClosed = true
                         controller.close()
                         return
                     }
@@ -42,12 +53,13 @@ export async function textStream<T>(res: ApiResponse<T>) {
 
                         // Handle the end event
                         if (json.type === 'end') {
+                            isClosed = true
                             controller.close()
                             return
                         }
 
-                        // Only process content events
-                        if (json.type === 'content') {
+                        // Only process content events if controller is still open
+                        if (json.type === 'content' && !isClosed) {
                             const text = json.content || ''
                             if (text) {
                                 const queue = encoder.encode(text)
@@ -56,7 +68,10 @@ export async function textStream<T>(res: ApiResponse<T>) {
                         }
                     } catch (e) {
                         console.error('Error parsing JSON:', e)
-                        controller.error(e)
+                        if (!isClosed) {
+                            isClosed = true
+                            controller.error(e)
+                        }
                     }
                 },
             })
@@ -75,6 +90,7 @@ export async function textStream<T>(res: ApiResponse<T>) {
     return stream
 }
 
+// FIXME: COPY LOGIC FROM textStream above
 export async function FileStream<T extends FormData>(
     url: string,
     payload: T,
