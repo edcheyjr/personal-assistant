@@ -174,28 +174,14 @@ const VoiceAICustomerInterface: React.FC<Props> = ({ handleNavClick }) => {
             }
 
             const response = await fetch(
-                `/api/agents/chat?input=${userMessage}&id=${selectedAgent.id}`
+                `/api/agents/chat?input=${userMessage}&id=${selectedAgent.id}`,
+                {
+                    signal: abortControllerRef.current.signal,
+                }
             )
 
-            // Check if response is not ok (HTTP error status)
             if (!response.ok) {
-                const errorText = await response.text()
-                const errorMessage: StreamingMessage = {
-                    id: Date.now(),
-                    text:
-                        errorText ||
-                        `HTTP Error: ${response.status} ${response.statusText}`,
-                    sender: 'system',
-                    timestamp: new Date().toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                    }),
-                    isStreaming: false,
-                }
-                setIsError(true)
-                dispatch({ type: 'ADD_ERROR', error: errorMessage })
-                toast.error('An error occurred')
-                return
+                throw new Error(`HTTP error! status: ${response.status}`)
             }
 
             const stream = response.body
@@ -228,168 +214,41 @@ const VoiceAICustomerInterface: React.FC<Props> = ({ handleNavClick }) => {
                 messageId: streamingMessageId,
             })
 
-            let buffer = ''
-            let hasReceivedContent = false
             let accumulatedContent = ''
 
-            // Helper function to safely parse JSON with better error handling
-            const safeJsonParse = (jsonString: string) => {
-                try {
-                    return { success: true, data: JSON.parse(jsonString) }
-                } catch (error) {
-                    return { success: false, error }
-                }
-            }
-
-            // Process a complete SSE line
-            const processSseLine = (line: string) => {
-                console.log('📝 Processing line:', line)
-
-                if (!line.trim().startsWith('data: ')) {
-                    if (line.trim()) {
-                        console.warn(
-                            '⚠️ Received non-SSE formatted line:',
-                            line.trim()
-                        )
-
-                        const errorMessage: StreamingMessage = {
-                            id: Date.now(),
-                            text: line.trim(),
-                            sender: 'system',
-                            timestamp: new Date().toLocaleTimeString([], {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                            }),
-                            isStreaming: false,
-                        }
-                        setIsError(true)
-                        dispatch({ type: 'ADD_ERROR', error: errorMessage })
-                        toast.error('An error occurred')
-                        return false // Indicate error
-                    }
-                    return true // Continue processing
-                }
-
-                const jsonString = line.slice(6).trim()
-                console.log('🔧 Extracted JSON:', jsonString)
-
-                if (!jsonString) {
-                    return true // Skip empty data lines
-                }
-
-                const parseResult = safeJsonParse(jsonString)
-                if (!parseResult.success) {
-                    console.warn('❌ Failed to parse JSON line:', jsonString)
-                    console.warn('Parse error:', parseResult.error)
-                    return true // Continue processing other lines
-                }
-
-                const eventData = parseResult.data
-                console.log('📊 Parsed event data:', eventData)
-
-                if (eventData.type === 'content' && eventData.content) {
-                    hasReceivedContent = true
-                    accumulatedContent += eventData.content
-                    console.log(
-                        '➕ Accumulated content so far:',
-                        accumulatedContent
-                    )
-
-                    dispatch({
-                        type: 'UPDATE_STREAMING_CONTENT',
-                        messageId: streamingMessageId,
-                        content: eventData.content,
-                    })
-                } else if (eventData.type === 'end') {
-                    console.log(
-                        '🏁 Stream end detected, final content:',
-                        accumulatedContent
-                    )
-
-                    const finalMessage: StreamingMessage = {
-                        id: streamingMessageId,
-                        text: accumulatedContent,
-                        sender: 'assistant',
-                        timestamp: new Date().toLocaleTimeString([], {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                        }),
-                        isStreaming: false,
-                        agentName: selectedAgent.name || 'AI Agent',
-                        isStep: false,
-                    }
-
-                    dispatch({
-                        type: 'FINISH_RESPONSE',
-                        finalMessage,
-                    })
-                    return 'end' // Signal end of stream
-                }
-
-                return true // Continue processing
-            }
-
-            while (true) {
-                const { done, value } = await reader.read()
-
-                if (done) {
-                    console.log('✅ Client stream finished')
-                    break
-                }
-
-                const chunk = decoder.decode(value, { stream: true })
-                console.log('📦 Client received chunk:', chunk)
-
-                // Add chunk to buffer
-                buffer += chunk
-
-                // Process complete lines from buffer
+            try {
                 while (true) {
-                    // Look for complete lines (ending with \n)
-                    const newlineIndex = buffer.indexOf('\n')
+                    const { done, value } = await reader.read()
 
-                    if (newlineIndex === -1) {
-                        // No complete line found, wait for more data
+                    if (done) {
+                        console.log('✅ Client stream finished')
                         break
                     }
 
-                    // Extract the complete line (excluding the newline)
-                    const line = buffer.substring(0, newlineIndex)
-                    // Remove the processed line from buffer
-                    buffer = buffer.substring(newlineIndex + 1)
+                    // Since textStream already parsed and returns only content text
+                    const textChunk = decoder.decode(value, { stream: true })
+                    console.log('📦 Client received text chunk:', textChunk)
 
-                    // Process the complete line
-                    const result = processSseLine(line)
+                    if (textChunk) {
+                        accumulatedContent += textChunk
+                        console.log(
+                            '➕ Accumulated content so far:',
+                            accumulatedContent
+                        )
 
-                    if (result === 'end') {
-                        // Stream ended, clean up and return
-                        return
-                    } else if (result === false) {
-                        // Error occurred, stop processing
-                        return
+                        dispatch({
+                            type: 'UPDATE_STREAMING_CONTENT',
+                            messageId: streamingMessageId,
+                            content: textChunk,
+                        })
                     }
                 }
+            } finally {
+                reader.releaseLock()
             }
 
-            // Handle any remaining buffer content after stream ends
-            if (buffer.trim()) {
-                console.log('🔄 Processing final buffer:', buffer.trim())
-
-                // Process any remaining complete lines in buffer
-                const remainingLines = buffer
-                    .split('\n')
-                    .filter((line) => line.trim())
-
-                for (const line of remainingLines) {
-                    const result = processSseLine(line)
-                    if (result === 'end' || result === false) {
-                        return
-                    }
-                }
-            }
-
-            // Finish the response if we received content but no explicit end event
-            if (hasReceivedContent) {
+            // Finish the response
+            if (accumulatedContent) {
                 console.log(
                     '✅ Finishing response with accumulated content:',
                     accumulatedContent
@@ -404,10 +263,14 @@ const VoiceAICustomerInterface: React.FC<Props> = ({ handleNavClick }) => {
                         minute: '2-digit',
                     }),
                     isStreaming: false,
-                    agentName: selectedAgent.name,
+                    agentName: selectedAgent.name || 'AI Agent',
                     isStep: false,
                 }
-                dispatch({ type: 'FINISH_RESPONSE', finalMessage })
+
+                dispatch({
+                    type: 'FINISH_RESPONSE',
+                    finalMessage,
+                })
             } else {
                 console.log('⚠️ No content received, stopping stream')
                 dispatch({ type: 'STOP_STREAMING' })
@@ -415,6 +278,13 @@ const VoiceAICustomerInterface: React.FC<Props> = ({ handleNavClick }) => {
         } catch (error) {
             setIsError(true)
             console.error('💥 Stream error:', error)
+
+            // Handle abort errors gracefully
+            if (error instanceof Error && error.name === 'AbortError') {
+                console.log('Stream was aborted')
+                dispatch({ type: 'STOP_STREAMING' })
+                return
+            }
 
             const errorMessage: StreamingMessage = {
                 id: Date.now(),

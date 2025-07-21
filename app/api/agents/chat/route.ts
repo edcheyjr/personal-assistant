@@ -34,8 +34,8 @@ export async function GET(req: NextRequest) {
             },
             token
         )
-        // const stream = await textStream(apiResponse)
-        return new Response(apiResponse.data)
+        const stream = await textStream(apiResponse)
+        return new Response(stream)
     } catch (error) {
         console.error('Error fetching agents:', error)
 

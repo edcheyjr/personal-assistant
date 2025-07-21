@@ -19,7 +19,6 @@ export async function textStream<T>(res: ApiResponse<T>) {
     const encoder = new TextEncoder()
     const decoder = new TextDecoder()
 
-    let counter = 0
     if (res.status === 401) {
         return 'You are unauthorized to make this request.'
     }
@@ -29,13 +28,7 @@ export async function textStream<T>(res: ApiResponse<T>) {
             const parser = createParser({
                 onError(error: ParseError) {
                     console.error('Error parsing event:', error)
-                    // if (error.type) {
-                    //     console.error('Field name:', error.field)
-                    //     console.error('Field value:', error.value)
-                    //     console.error('Line:', error.line)
-                    // } else if (error.type === 'invalid-retry') {
-                    //     console.error('Invalid retry interval:', error.value)
-                    // }
+                    controller.error(error)
                 },
                 onEvent(event) {
                     const data = event.data
@@ -43,22 +36,38 @@ export async function textStream<T>(res: ApiResponse<T>) {
                         controller.close()
                         return
                     }
+
                     try {
                         const json = JSON.parse(data)
-                        const text = json.value || ''
-                        if (counter < 2 && (text.match(/\n/) || []).length) {
+
+                        // Handle the end event
+                        if (json.type === 'end') {
+                            controller.close()
                             return
                         }
-                        const queue = encoder.encode(text)
-                        controller.enqueue(queue)
-                        counter++
+
+                        // Only process content events
+                        if (json.type === 'content') {
+                            const text = json.content || ''
+                            if (text) {
+                                const queue = encoder.encode(text)
+                                controller.enqueue(queue)
+                            }
+                        }
                     } catch (e) {
+                        console.error('Error parsing JSON:', e)
                         controller.error(e)
                     }
                 },
             })
-            for await (const chunk of res.data as any) {
-                parser.feed(decoder.decode(chunk))
+
+            try {
+                for await (const chunk of res.data as any) {
+                    parser.feed(decoder.decode(chunk))
+                }
+            } catch (error) {
+                console.error('Error reading stream:', error)
+                controller.error(error)
             }
         },
     })
