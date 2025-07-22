@@ -1,14 +1,14 @@
 #!/bin/bash
 
-# SSL Certificate Setup with Certbot for AerialGIS
+# SSL Certificate Setup with Certbot for Example
 # This script sets up Nginx reverse proxy and SSL certificates
 
 set -e
 
 # Configuration
-DOMAIN="aerialgis.com"
-WWW_DOMAIN="www.aerialgis.com"
-EMAIL="nancy@aerialgis.com"
+DOMAIN="example.com"
+WWW_DOMAIN="www.example.com"
+EMAIL="nancy@example.com"
 APP_PORT="8080"
 
 echo "🔐 Setting up SSL certificates for $DOMAIN and $WWW_DOMAIN"
@@ -59,7 +59,7 @@ sudo mkdir -p /etc/nginx/sites-available
 sudo mkdir -p /etc/nginx/sites-enabled
 
 # Create the site configuration
-cat << EOF | sudo tee /etc/nginx/sites-available/aerialgis
+cat << EOF | sudo tee /etc/nginx/sites-available/example
 server {
     listen 80;
     server_name $DOMAIN $WWW_DOMAIN;
@@ -133,7 +133,7 @@ server {
 EOF
 
 # Enable the site
-sudo ln -sf /etc/nginx/sites-available/aerialgis /etc/nginx/sites-enabled/
+sudo ln -sf /etc/nginx/sites-available/example /etc/nginx/sites-enabled/
 
 # Update main Nginx configuration to include sites-enabled
 if [[ "$OS" == "amzn" ]]; then
@@ -180,8 +180,8 @@ echo "🔍 Checking if application is running on port $APP_PORT..."
 if ! curl -f http://localhost:$APP_PORT >/dev/null 2>&1; then
     echo "⚠️ Warning: Application is not responding on port $APP_PORT"
     echo "Please ensure your Docker container is running:"
-    echo "  docker ps | grep aerialgis"
-    echo "  docker logs aerialgis"
+    echo "  docker ps | grep example"
+    echo "  docker logs example"
     read -p "Continue with SSL setup anyway? (y/N): " -n 1 -r
     echo
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then

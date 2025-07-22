@@ -3,10 +3,10 @@
 # Nginx SSL Monitoring and Maintenance Script
 # Run this script to check the health of your SSL setup
 
-DOMAIN="aerialgis.com"
-WWW_DOMAIN="www.aerialgis.com"
+DOMAIN="example.com"
+WWW_DOMAIN="www.example.com"
 
-echo "🔍 AerialGIS SSL Health Check"
+echo "🔍 Example SSL Health Check"
 echo "============================="
 
 # Check Nginx status
@@ -72,13 +72,13 @@ done
 # Check Docker container
 echo ""
 echo "🐳 Docker Container Status:"
-if docker ps | grep -q aerialgis; then
-    echo "✅ AerialGIS container is running"
-    docker ps --filter "name=aerialgis" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+if docker ps | grep -q example; then
+    echo "✅ example container is running"
+    docker ps --filter "name=example" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 else
-    echo "❌ AerialGIS container is not running"
+    echo "❌ example container is not running"
     echo "🔧 Available containers:"
-    docker ps -a --filter "name=aerialgis" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+    docker ps -a --filter "name=example" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 fi
 
 # Check port connectivity
@@ -135,4 +135,4 @@ echo "  Restart Nginx: sudo systemctl restart nginx"
 echo "  Check SSL: sudo certbot certificates"
 echo "  Renew SSL: sudo certbot renew"
 echo "  View logs: sudo tail -f /var/log/nginx/access.log"
-echo "  Container logs: docker logs aerialgis -f"
+echo "  Container logs: docker logs example -f"
