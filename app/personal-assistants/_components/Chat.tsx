@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button'
 import { ViewType } from '@/types/view'
 import { useThemeColor } from '@/providers/color-theme-provider'
 import MemoryOperationsDisplay from '@/components/chat/MemoryDisplay'
+import { logger } from '@/utils/logger'
 
 interface QuickGroup {
     name: string
@@ -255,8 +256,25 @@ const VoiceAICustomerInterface: React.FC<Props> = ({ handleNavClick }) => {
 
                     for (const line of lines) {
                         try {
+                            //  const jsonStr = line.slice(6).trim()
                             const jsonStr = line.replace('data: ', '')
-                            const data = JSON.parse(jsonStr)
+                            let data: any
+                            try {
+                                data = JSON.parse(jsonStr)
+                            } catch (parseError) {
+                                process.env.NODE_ENV == 'development'
+                                    ? logger(
+                                          parseError,
+                                          'JSON Parse Failed, Error ',
+                                          'error'
+                                      )
+                                    : logger(
+                                          'json parsing might have failed',
+                                          '',
+                                          'warning'
+                                      )
+                                continue
+                            }
 
                             if (data.type === 'content' && data.content) {
                                 accumulatedContent += data.content
