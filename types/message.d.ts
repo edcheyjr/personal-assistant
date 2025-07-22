@@ -4,9 +4,19 @@ export interface Message {
     sender: 'user' | 'assistant' | 'system'
     timestamp: string
 }
+export interface StreamingMessage extends Message {
+    isStreaming?: boolean
+    agentName?: string
+    toolEvents?: AgentEvent[]
+    toolCalls?: Map<string, any>
+    finalResponse?: string
+    isStep?: boolean
+    stepContent?: string
+    memoryOperations?: MemoryOperation[]
+}
 
 export interface MessageProps {
-    message: Message
+    message: StreamingMessage
     isError: boolean
 }
 interface AgentEvent {

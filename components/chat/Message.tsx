@@ -4,6 +4,7 @@ import { cn } from '@/utils/cn'
 import { generateThemeCSS, getThemeRGB } from '@/lib/theme'
 import MarkdownWrapper from '../MarkdownWrapper'
 import { useThemeColor } from '@/providers/color-theme-provider'
+import MemoryOperationsDisplay from './MemoryDisplay'
 
 const Message: React.FC<MessageProps> = ({ message, isError }) => {
     const { themeColor } = useThemeColor()
@@ -70,6 +71,13 @@ const Message: React.FC<MessageProps> = ({ message, isError }) => {
                         {message.timestamp}
                     </p>
                 )}
+                {/* Memory Operations Display */}
+                {message.memoryOperations &&
+                    message.memoryOperations.length > 0 && (
+                        <MemoryOperationsDisplay
+                            operations={message.memoryOperations}
+                        />
+                    )}
             </div>
         </div>
     )

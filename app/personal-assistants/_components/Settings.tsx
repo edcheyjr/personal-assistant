@@ -617,6 +617,11 @@ const AgentsSettings: React.FC = () => {
                         />
                     </div>
                 </div>
+                <CreateAgentModal
+                    isOpen={openCreateModal}
+                    onClose={() => setOpenCreateModal(false)}
+                    onOpenChange={(open) => setOpenCreateModal(open)}
+                />
             </div>
         )
     }
