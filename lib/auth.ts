@@ -108,7 +108,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         // this should be same as the token expiration time in the backend
         maxAge: 7200, // 120 min as backend
     },
-    // trustHost: true, enable on https
+    trustHost: true,
     debug: process.env.APP_ENV === 'development',
     pages: {
         signIn: routes.auth.login,

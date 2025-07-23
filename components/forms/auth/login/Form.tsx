@@ -101,7 +101,7 @@ export default function LoginForm() {
                                         <div className="relative w-full">
                                             <Input
                                                 key="email-input-0"
-                                                placeholder="info@examplecom"
+                                                placeholder="info@example.com"
                                                 type="email"
                                                 id="email-input-0"
                                                 className=" "
