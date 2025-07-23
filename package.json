@@ -1,12 +1,12 @@
 {
-    "name": "personal_assistants",
+    "name": "personal assistanta",
     "version": "0.1.0",
     "private": true,
     "scripts": {
         "dev": "next dev --turbopack",
         "build": "next build",
         "start": "next start",
-        "postbuild": "echo 'Post-build script executed!'",
+        "postbuild": "pm2 reload personal-assistant --update-env && echo 'Post-build script executed!'",
         "preview": "next build && next start",
         "lint": "next lint"
     },
