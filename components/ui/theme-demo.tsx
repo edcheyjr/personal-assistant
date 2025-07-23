@@ -1,7 +1,8 @@
-import { colorOptions, useThemeColor } from '@/lib/theme'
+import { colorOptions } from '@/lib/theme'
 import { Button } from './button'
 import React from 'react'
 import { ThemedTextarea as Textarea } from './textarea'
+import { useThemeColor } from '@/providers/color-theme-provider'
 
 // Theme Color Picker Component
 function ThemeColorPicker() {
