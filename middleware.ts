@@ -38,7 +38,7 @@ export default auth((req) => {
 
         // If user is authenticated and trying to access login page, redirect to dashboard/home
         if (pathname.startsWith(routes.auth.login)) {
-            const url = new URL('/personal-assistants', req.nextUrl.origin) // or routes.dashboard
+            const url = new URL('/', req.nextUrl.origin) // or routes.dashboard
             return NextResponse.redirect(url)
         }
 
@@ -68,6 +68,6 @@ export const config = {
          * - _next/image (image optimization files)
          * - favicon.ico (favicon file)
          */
-        '/((?!api|_next/static|_next/image|favicon.ico|auth|.*embed.*).*)',
+        '/((?!api|_next/static|_next/image|favicon.ico|.*embed.*).*)',
     ],
 }
