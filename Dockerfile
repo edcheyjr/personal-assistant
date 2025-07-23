@@ -19,7 +19,7 @@ COPY . .
 EXPOSE 3010
 
 # Generate sitemaps
-RUN pnpm build
+RUN pnpm postbuild
 
 # Build the Next.js app for production
 RUN pnpm build
