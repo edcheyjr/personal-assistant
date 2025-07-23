@@ -1,7 +1,7 @@
 # This server block handles HTTP requests and proxies them to port 3010
 server {
     listen 80;
-    server_name aerialgis.com www.aerialgis.com;
+    server_name example.com www.example.com;
 
     # Proxy requests to the application running on port 3010
     location / {
@@ -15,7 +15,7 @@ server {
 # Redirect HTTP traffic to HTTPS and handle Certbot challenges
 server {
     listen 80;
-    server_name aerialgis.com www.aerialgis.com;
+    server_name example.com www.example.com;
 
     # Redirect all HTTP requests to HTTPS
     location / {
@@ -31,10 +31,10 @@ server {
 # Serve HTTPS and proxy requests to Docker container running on port 8080
 server {
     listen 443 ssl; # managed by Certbot
-    server_name aerialgis.com www.aerialgis.com;
+    server_name example.com www.example.com;
 
-    ssl_certificate /etc/letsencrypt/live/aerialgis.com/fullchain.pem; # managed by Certbot
-    ssl_certificate_key /etc/letsencrypt/live/aerialgis.com/privkey.pem; # managed by Certbot
+    ssl_certificate /etc/letsencrypt/live/example.com/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/example.com/privkey.pem; # managed by Certbot
     include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
     ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
 
