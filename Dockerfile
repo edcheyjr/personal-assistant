@@ -2,33 +2,23 @@ FROM node:22-alpine3.19
 
 WORKDIR /app
 
-# Copy the package files
-COPY package.json ./ 
-COPY pnpm-lock.yaml ./ 
+# Copy package files first (for better caching)
+COPY package.json pnpm-lock.yaml ./
 
-# Install pnpm globally and install dependencies
+# Install pnpm and dependencies
 RUN npm install -g pnpm && pnpm install
 
-# Install sharp package
+# Install sharp (for Next.js image optimization)
 RUN pnpm add sharp
 
-# Copy the rest of the application files
+# Copy the rest of the files
 COPY . .
 
-# Expose port 3010
-EXPOSE 3010
-
-# Generate sitemaps
-RUN pnpm postbuild
-
-# Build the Next.js app for production
+# Build the Next.js app
 RUN pnpm build
 
-# List directories to verify build
-RUN ls -a
+# Verify the build exists
+RUN ls -la .next
 
-# Remove cache
-RUN rm -rf .next/cache
-
-# Start the Next.js app on port 3010
+# Start the app
 CMD ["pnpm", "start", "-p", "3010"]
