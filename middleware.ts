@@ -6,7 +6,7 @@ export default auth((req) => {
     console.log('Middleware executing for:', req.nextUrl.pathname)
 
     const { pathname } = req.nextUrl
-    console.log('req.auth', req.auth)
+    console.log('req.auth', req.auth?.user)
 
     // Define public routes that don't require authentication
     const publicRoutes = [
@@ -38,7 +38,7 @@ export default auth((req) => {
 
         // If user is authenticated and trying to access login page, redirect to dashboard/home
         if (pathname.startsWith(routes.auth.login)) {
-            const url = new URL('/', req.nextUrl.origin) // or routes.dashboard
+            const url = new URL('/personal-assistants', req.nextUrl.origin) // or routes.dashboard
             return NextResponse.redirect(url)
         }
 
