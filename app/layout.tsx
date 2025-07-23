@@ -17,8 +17,8 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-    title: 'personal assistants',
-    description: 'create your very own personal assistant',
+    title: 'multi-agent: personal assistants',
+    description: 'create your very own multi agent personal assistant',
 }
 
 export default async function RootLayout({
