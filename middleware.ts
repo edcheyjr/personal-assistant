@@ -53,8 +53,6 @@ export default auth((req) => {
 
         // Redirect to login for protected routes
         const url = new URL(routes.auth.login, req.nextUrl.origin)
-        // Preserve the original URL as a redirect parameter
-        url.searchParams.set('redirect', pathname)
         return NextResponse.redirect(url)
     }
 })
@@ -68,6 +66,6 @@ export const config = {
          * - _next/image (image optimization files)
          * - favicon.ico (favicon file)
          */
-        '/((?!api|_next/static|_next/image|favicon.ico|auth|.*embed.*).*)',
+        '/((?!api|_next/static|_next/image|favicon.ico|.*embed.*).*)',
     ],
 }
