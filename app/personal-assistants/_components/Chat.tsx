@@ -160,7 +160,6 @@ const VoiceAICustomerInterface: React.FC<Props> = ({ handleNavClick }) => {
     const [isListening, setIsListening] = useState<boolean>(false)
     const [isRecording, setIsRecording] = useState<boolean>(false)
     const [selectedGroup, setSelectedGroup] = useState<string>('Support Team')
-    const [threadId] = useState<string>(() => crypto.randomUUID())
 
     const [messagesState, dispatch] = useReducer(messagesReducer, {
         messages: [],
