@@ -1,34 +1,55 @@
-FROM node:22-alpine3.22
+# Use Node.js 20 with Alpine (smaller and more secure than 22)
+FROM node:20-alpine3.19
 
+# Set working directory
 WORKDIR /app
 
-# Copy the package files
-COPY package.json ./ 
-COPY pnpm-lock.yaml ./ 
+# Install necessary packages for native dependencies
+RUN apk add --no-cache \
+    libc6-compat \
+    python3 \
+    make \
+    g++
 
-# Install pnpm globally and install dependencies
-RUN npm install -g pnpm && pnpm install
+# Copy package files first for better layer caching
+COPY package.json ./
+COPY pnpm-lock.yaml ./
 
-# Install sharp package
-RUN pnpm add sharp
+# Install pnpm and dependencies in a single layer
+RUN npm install -g pnpm@latest && \
+    pnpm install --frozen-lockfile && \
+    pnpm add sharp
 
-# Copy the rest of the application files
+# Copy application files
 COPY . .
 
-# Expose port 3010
+# Build optimizations
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NODE_ENV=production
+
+# Generate sitemaps and build
+RUN pnpm postbuild && \
+    pnpm build
+
+# Clean up build artifacts and cache
+RUN rm -rf .next/cache && \
+    npm cache clean --force && \
+    pnpm store prune
+
+# Create non-root user for security
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs
+
+# Change ownership of app directory
+RUN chown -R nextjs:nodejs /app
+USER nextjs
+
+# Expose port
 EXPOSE 3010
 
-# Generate sitemaps
-RUN pnpm postbuild
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:3010 || exit 1
 
-# Build the Next.js app for production
-RUN pnpm build
-
-# List directories to verify build
-RUN ls -a
-
-# Remove cache
-RUN rm -rf .next/cache
-
-# Start the Next.js app on port 3010
+# Start the application
 CMD ["pnpm", "start", "-p", "3010"]
