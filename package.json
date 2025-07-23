@@ -10,10 +10,6 @@
         "preview": "next build && next start",
         "lint": "next lint"
     },
-    "engines": {
-        "pnpm": ">=10.13.1",
-        "node": ">=v22.12.0"
-    },
     "dependencies": {
         "@hookform/resolvers": "^5.1.1",
         "@tanstack/react-query": "^5.83.0",
