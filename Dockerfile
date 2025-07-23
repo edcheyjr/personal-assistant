@@ -1,4 +1,5 @@
-FROM node:24-alpine:3.21
+FROM node:22-alpine3.19
+
 WORKDIR /app
 
 # Copy the package files
