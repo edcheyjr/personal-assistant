@@ -29,8 +29,8 @@ docker run -d --name personal-assistant \
   -p 8080:3010 \
   -e AUTH_SECRET=2FF51F714B1E9B31C6B313C9AA9487 \
   -e APP_ENV=production \
-  -e NEXT_PUBLIC_DEV_BASE_URL=http://localhost/api/v1 \
-  -e NEXT_PUBLIC_PRODUCTION_BASE_URL=http://localhost/api/v1 \
+  -e NEXT_PUBLIC_DEV_BASE_URL=http://10.2.26.13/api/v1 \
+  -e NEXT_PUBLIC_PRODUCTION_BASE_URL=http://10.2.26.13/api/v1 \
   --log-driver json-file \
   --log-opt max-size=10m \
   --log-opt max-file=3 \
