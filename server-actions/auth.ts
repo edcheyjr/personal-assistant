@@ -1,6 +1,6 @@
 'use server'
 
-import { signIn } from '@/lib/auth'
+import { signIn, signOut } from '@/lib/auth'
 import { loginSchema } from '@/lib/validation/auth'
 import { AuthUser } from '@/types/user'
 import { AuthError } from 'next-auth'
@@ -25,6 +25,11 @@ export async function loginUser(data: z.infer<typeof loginSchema>) {
     // Sign in the user and redirect to the dashboard
     try {
         await signIn('credentials', validatedData)
+        return {
+            success: true,
+            message: 'You have been logged in successfully',
+            data: { urlToRedirect: '/' },
+        }
     } catch (error: any) {
         let errorMessage: string =
             'Failed to login. Please check if your credentials are valid or try again later.'
@@ -39,10 +44,5 @@ export async function loginUser(data: z.infer<typeof loginSchema>) {
             }
         }
         return { success: false, message: errorMessage, data: null }
-    }
-    return {
-        success: true,
-        message: 'You have been logged in successfully',
-        data: { urlToRedirect: '/' },
     }
 }

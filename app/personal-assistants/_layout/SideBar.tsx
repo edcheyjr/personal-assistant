@@ -4,7 +4,6 @@ import Logo from '@/components/Logo'
 import { Button } from '@/components/ui/button'
 import { ViewType } from '@/types/view'
 import {
-    BarChart3,
     LoaderIcon,
     LogOut,
     LucideIcon,
@@ -14,10 +13,11 @@ import {
 } from 'lucide-react'
 import React, { useState } from 'react'
 import { cn } from '@/utils/cn'
-import { signOut } from 'next-auth/react'
-import { useAgents } from '@/hooks/api/use-agents'
 import { AgentType } from '@/types/agent'
 import { useAgentContext } from '@/providers/agents-provider'
+import { useRouter } from 'next/navigation'
+import { routes } from '@/lib/routes'
+import { signOut } from 'next-auth/react'
 
 type Props = {
     sidebarOpen: boolean
@@ -39,6 +39,7 @@ const SideMenuBar = ({
     handleNavClick,
     toggleSidebar,
 }: Props) => {
+    const router = useRouter()
     const [loading, setLoading] = useState(false)
     const { agents, isLoading, error } = useAgentContext()
 

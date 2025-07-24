@@ -1,4 +1,5 @@
 'use client'
+import { useThemeColor } from '@/providers/color-theme-provider'
 import { cn } from '@/utils/cn'
 import { AnimatePresence, motion } from 'framer-motion'
 import React, { useRef, useState, useEffect } from 'react'
@@ -143,6 +144,8 @@ const CollisionMechanism = React.forwardRef<
         }
     }
 >(({ parentRef, containerRef, beamOptions = {} }, ref) => {
+    const { themeColor } = useThemeColor()
+
     const beamRef = useRef<HTMLDivElement>(null)
     const [collision, setCollision] = useState<{
         detected: boolean
@@ -228,8 +231,11 @@ const CollisionMechanism = React.forwardRef<
                     delay: beamOptions.delay || 0,
                     repeatDelay: beamOptions.repeatDelay || 0,
                 }}
+                style={{
+                    backgroundImage: `linear-gradient(to top, ${themeColor}, ${themeColor} 40%, transparent)`,
+                }}
                 className={cn(
-                    'absolute left-0 top-20 m-auto h-14 w-px rounded-full bg-gradient-to-t from-indigo-500 via-purple-500 to-transparent',
+                    `absolute left-0 top-20 m-auto h-14 w-px rounded-full bg-gradient-to-t from-indigo-500 via-purple-500 to-transparent`,
                     beamOptions.className
                 )}
             />
@@ -253,6 +259,7 @@ const CollisionMechanism = React.forwardRef<
 CollisionMechanism.displayName = 'CollisionMechanism'
 
 const Explosion = ({ ...props }: React.HTMLProps<HTMLDivElement>) => {
+    const { themeColor } = useThemeColor()
     const spans = Array.from({ length: 20 }, (_, index) => ({
         id: index,
         initialX: 0,
@@ -271,6 +278,9 @@ const Explosion = ({ ...props }: React.HTMLProps<HTMLDivElement>) => {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 1.5, ease: 'easeOut' }}
+                style={{
+                    backgroundImage: `linear-gradient(to right, transparent, ${themeColor}, transparent)`,
+                }}
                 className="absolute -inset-x-10 top-0 m-auto h-2 w-10 rounded-full bg-gradient-to-r from-transparent via-indigo-500 to-transparent blur-sm"
             ></motion.div>
             {spans.map((span) => (
@@ -285,6 +295,9 @@ const Explosion = ({ ...props }: React.HTMLProps<HTMLDivElement>) => {
                     transition={{
                         duration: Math.random() * 1.5 + 0.5,
                         ease: 'easeOut',
+                    }}
+                    style={{
+                        backgroundImage: `linear-gradient(to bottom, ${themeColor}, ${themeColor} 40%)`,
                     }}
                     className="absolute h-1 w-1 rounded-full bg-gradient-to-b from-indigo-500 to-purple-500"
                 />
