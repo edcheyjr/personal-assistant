@@ -120,17 +120,9 @@ export default function LoginForm() {
                         name="password"
                         render={({ field, fieldState, formState }) => (
                             <FormItem className="col-span-12 col-start-auto flex self-end flex-col gap-2 space-y-0 items-start">
-                                {fieldState.error ? (
-                                    <FormMessages
-                                        type="error"
-                                        className="mb-2"
-                                        messages={[fieldState.error.message]}
-                                    />
-                                ) : (
-                                    <FormLabel htmlFor="product_code">
-                                        Password
-                                    </FormLabel>
-                                )}
+                                <FormLabel htmlFor="product_code">
+                                    Password
+                                </FormLabel>
 
                                 <div className="w-full">
                                     <FormControl>
