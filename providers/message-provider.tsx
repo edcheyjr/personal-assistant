@@ -6,9 +6,11 @@ import React, {
     useReducer,
     useRef,
     ReactNode,
+    useEffect,
 } from 'react'
 import { produce } from 'immer'
 import { StreamingMessage } from '@/types/message'
+import { useThreadId } from '@/hooks/api/use-thread-id'
 
 interface MemoryOperation {
     type: 'add_message_to_memory' | 'retrieve_memory'
@@ -23,6 +25,8 @@ interface MessagesState {
     agentName: string
     streamingContent: string
     currentMemoryOperations: MemoryOperation[]
+    currentThreadId: string | null
+    isLoadingNewThread: boolean
 }
 
 type MessagesAction =
@@ -34,6 +38,9 @@ type MessagesAction =
     | { type: 'ADD_ERROR'; error: StreamingMessage }
     | { type: 'STOP_STREAMING' }
     | { type: 'CLEAR_MESSAGES' }
+    | { type: 'SET_THREAD_ID'; threadId: string }
+    | { type: 'SET_LOADING_NEW_THREAD'; isLoading: boolean }
+    | { type: 'START_NEW_CONVERSATION'; threadId: string }
 
 const messagesReducer = produce(
     (draft: MessagesState, action: MessagesAction) => {
@@ -142,6 +149,26 @@ const messagesReducer = produce(
                 draft.streamingContent = ''
                 draft.currentMemoryOperations = []
                 break
+
+            case 'SET_THREAD_ID':
+                draft.currentThreadId = action.threadId
+                break
+
+            case 'SET_LOADING_NEW_THREAD':
+                draft.isLoadingNewThread = action.isLoading
+                break
+
+            case 'START_NEW_CONVERSATION':
+                // Clear all messages and reset state
+                draft.messages = []
+                draft.isStreaming = false
+                draft.currentStreamingId = null
+                draft.streamingContent = ''
+                draft.currentMemoryOperations = []
+                // Set new thread ID
+                draft.currentThreadId = action.threadId
+                draft.isLoadingNewThread = false
+                break
         }
     }
 )
@@ -149,7 +176,7 @@ const messagesReducer = produce(
 interface MessagesContextType {
     state: MessagesState
     dispatch: React.Dispatch<MessagesAction>
-    abortControllerRef: React.MutableRefObject<AbortController | null>
+    abortControllerRef: React.RefObject<AbortController | null>
     addUserMessage: (text: string) => void
     startStreaming: (agentName: string) => number
     updateStreamingContent: (messageId: number, content: string) => void
@@ -162,6 +189,8 @@ interface MessagesContextType {
     addError: (errorText: string) => void
     stopStreaming: () => void
     clearMessages: () => void
+    startNewConversation: () => Promise<void>
+    refreshCurrentThread: () => Promise<void>
 }
 
 const MessagesContext = createContext<MessagesContextType | undefined>(
@@ -175,6 +204,8 @@ const initialState: MessagesState = {
     agentName: '',
     streamingContent: '',
     currentMemoryOperations: [],
+    currentThreadId: null,
+    isLoadingNewThread: false,
 }
 
 interface MessagesProviderProps {
@@ -186,6 +217,17 @@ export const MessagesProvider: React.FC<MessagesProviderProps> = ({
 }) => {
     const [state, dispatch] = useReducer(messagesReducer, initialState)
     const abortControllerRef = useRef<AbortController | null>(null)
+    const { data: uuidData, refetch: refetchUUID } = useThreadId()
+
+    // Initialize with a thread ID on mount
+    useEffect(() => {
+        if (uuidData?.data?.thread_id && !state.currentThreadId) {
+            dispatch({
+                type: 'SET_THREAD_ID',
+                threadId: uuidData.data.thread_id,
+            })
+        }
+    }, [uuidData?.data?.thread_id, state.currentThreadId])
 
     const addUserMessage = (text: string) => {
         const message: StreamingMessage = {
@@ -270,6 +312,44 @@ export const MessagesProvider: React.FC<MessagesProviderProps> = ({
         dispatch({ type: 'CLEAR_MESSAGES' })
     }
 
+    const startNewConversation = async (): Promise<void> => {
+        try {
+            dispatch({ type: 'SET_LOADING_NEW_THREAD', isLoading: true })
+
+            // Fetch a new UUID/thread ID
+            const { data: newUuidData } = await refetchUUID()
+            console.log('newUuidData', newUuidData)
+
+            if (newUuidData?.data?.thread_id) {
+                dispatch({
+                    type: 'START_NEW_CONVERSATION',
+                    threadId: newUuidData.data.thread_id,
+                })
+            } else {
+                throw new Error('Failed to get new thread ID')
+            }
+        } catch (error) {
+            console.error('Error starting new conversation:', error)
+            dispatch({ type: 'SET_LOADING_NEW_THREAD', isLoading: false })
+            // Add error message to let user know something went wrong
+            addError('Failed to start new conversation. Please try again.')
+        }
+    }
+
+    const refreshCurrentThread = async (): Promise<void> => {
+        try {
+            const { data: newUuidData } = await refetchUUID()
+            if (newUuidData?.data?.thread_id) {
+                dispatch({
+                    type: 'SET_THREAD_ID',
+                    threadId: newUuidData.data.thread_id,
+                })
+            }
+        } catch (error) {
+            console.error('Error refreshing thread:', error)
+        }
+    }
+
     const contextValue: MessagesContextType = {
         state,
         dispatch,
@@ -282,6 +362,8 @@ export const MessagesProvider: React.FC<MessagesProviderProps> = ({
         addError,
         stopStreaming,
         clearMessages,
+        startNewConversation,
+        refreshCurrentThread,
     }
 
     return (

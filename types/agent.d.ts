@@ -104,7 +104,7 @@ export interface UpdateAgentRequest {
 
 export interface StreamParams {
     user_input: string
-    thread_id?: string
+    thread_id: string
     agent_id: string
 }
 

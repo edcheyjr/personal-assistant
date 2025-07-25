@@ -17,6 +17,7 @@ export async function GET(req: NextRequest) {
         const token = session?.user.access_token
         const user_input = req.nextUrl.searchParams.get('input') as string
         const agent_id = req.nextUrl.searchParams.get('id') as string
+        const thread_id = req.nextUrl.searchParams.get('thread-id') as string
         // Validate parameters
         if (!user_input || !agent_id) {
             return NextResponse.json(
@@ -31,6 +32,7 @@ export async function GET(req: NextRequest) {
             {
                 agent_id,
                 user_input,
+                thread_id,
             },
             token
         )

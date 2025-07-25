@@ -65,7 +65,7 @@ const VoiceAICustomerInterface: React.FC<Props> = ({ handleNavClick }) => {
             }
 
             const response = await fetch(
-                `/api/agents/chat?input=${userMessage}&id=${selectedAgent.id}`,
+                `/api/agents/chat?input=${userMessage}&id=${selectedAgent.id}&thread-id=${messagesState.currentThreadId}`,
                 {
                     signal: abortControllerRef.current.signal,
                 }
