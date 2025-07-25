@@ -55,9 +55,7 @@ const Message: React.FC<MessageProps> = ({ message, isError }) => {
                 )}
                 style={message.sender === 'user' ? userMessageStyle : undefined}
             >
-                <div className="text-sm leading-relaxed whitespace-pre-wrap">
-                    <MarkdownWrapper>{message.text}</MarkdownWrapper>
-                </div>
+                <MarkdownWrapper>{message.text}</MarkdownWrapper>
 
                 {message.timestamp && (
                     <p
