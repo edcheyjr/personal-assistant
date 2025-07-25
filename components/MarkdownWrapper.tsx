@@ -12,7 +12,7 @@ type Props = { children: string }
 
 export default function MarkdownWrapper({ children }: Props) {
     return (
-        <div className="dark:prose-invert prose break-words prose-p:leading-relaxed prose-pre:p-0">
+        <div className=" text-sm leading-relaxed">
             <MemoizedReactMarkdown
                 // TODO: add more markdown/remark plugins as needed
                 remarkPlugins={[remarkGfm, remarkMath, remarkDirective]}
