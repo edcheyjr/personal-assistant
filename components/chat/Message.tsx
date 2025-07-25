@@ -16,6 +16,32 @@ const Message: React.FC<MessageProps> = ({ message, isError }) => {
         ...generateThemeCSS(themeColor),
         color: `${themeRGB.r} ${themeRGB.g} ${themeRGB.b}`,
     }
+
+    // Assistant messages now fill width with no background
+    if (message.sender === 'assistant') {
+        return (
+            <div className="flex mb-4 px-4 sm:px-6">
+                <div className="w-full py-3">
+                    <MarkdownWrapper>{message.text}</MarkdownWrapper>
+
+                    {message.timestamp && (
+                        <p className="mt-2 text-xs font-medium text-muted-foreground/70">
+                            {message.timestamp}
+                        </p>
+                    )}
+
+                    {/* Memory Operations Display */}
+                    {message.memoryOperations &&
+                        message.memoryOperations.length > 0 && (
+                            <MemoryOperationsDisplay
+                                operations={message.memoryOperations}
+                            />
+                        )}
+                </div>
+            </div>
+        )
+    }
+
     return (
         <div
             className={cn(
@@ -33,13 +59,6 @@ const Message: React.FC<MessageProps> = ({ message, isError }) => {
                         'text-white',
                         'hover:shadow-md',
                         'border border-black/10',
-                    ],
-
-                    // Assistant message
-                    message.sender === 'assistant' && [
-                        'bg-muted text-muted-foreground',
-                        'border border-border',
-                        'hover:bg-muted/80',
                     ],
 
                     // System message (info or error)
