@@ -10,6 +10,7 @@ import QueryProvider from './query-provider'
 import { Session } from 'next-auth'
 import { AgentProvider } from './agents-provider'
 import { ColorThemeProvider } from './color-theme-provider'
+import { MessagesProvider } from './message-provider'
 
 type ProviderType = {
     session?: Session
@@ -33,7 +34,9 @@ export default function Providers({
             <QueryProvider>
                 <ThemeProvider {...props}>
                     <ColorThemeProvider initialThemeColor={initialThemeColor}>
-                        <AgentProvider>{children}</AgentProvider>
+                        <AgentProvider>
+                            <MessagesProvider>{children}</MessagesProvider>
+                        </AgentProvider>
                     </ColorThemeProvider>
                 </ThemeProvider>
             </QueryProvider>
