@@ -1,3 +1,5 @@
+//TODO: refactor and clean
+
 'use client'
 
 import Logo from '@/components/Logo'
@@ -10,14 +12,18 @@ import {
     MessageSquare,
     Settings,
     X,
+    Plus,
 } from 'lucide-react'
 import React, { useState } from 'react'
 import { cn } from '@/utils/cn'
 import { AgentType } from '@/types/agent'
 import { useAgentContext } from '@/providers/agents-provider'
+import { useMessages } from '@/providers/message-provider' // Import the messages provider
 import { useRouter } from 'next/navigation'
-import { routes } from '@/lib/routes'
 import { signOut } from 'next-auth/react'
+import { Separator } from '@/components/ui/separator'
+import { useThemeColor } from '@/providers/color-theme-provider'
+import { useTheme } from 'next-themes'
 
 type Props = {
     sidebarOpen: boolean
@@ -31,6 +37,9 @@ interface NavItemProps {
     label: string
     active: boolean
     onClick: () => void
+    loading?: boolean
+    newChat?: boolean
+    currentTheme?: string
 }
 
 const SideMenuBar = ({
@@ -39,9 +48,16 @@ const SideMenuBar = ({
     handleNavClick,
     toggleSidebar,
 }: Props) => {
+    const { theme, systemTheme } = useTheme()
+    const currentTheme = theme == 'system' ? systemTheme : theme
+    const { themeColor } = useThemeColor()
     const router = useRouter()
     const [loading, setLoading] = useState(false)
     const { agents, isLoading, error } = useAgentContext()
+    const {
+        startNewConversation,
+        state: { isLoadingNewThread },
+    } = useMessages()
 
     const numberUniqueAgentTypes = agents.reduce(
         (set: Set<AgentType>, agent) => {
@@ -50,28 +66,67 @@ const SideMenuBar = ({
         },
         new Set<AgentType>()
     ).size
+
     const handleSignOut = async () => {
-        setLoading(false)
-        await signOut()
         setLoading(true)
+        await signOut()
+        setLoading(false)
     }
+
+    const handleNewChat = async () => {
+        try {
+            await startNewConversation()
+            // Navigate to customer interface if not already there
+            if (currentView !== 'customer-interface') {
+                handleNavClick('customer-interface')
+            }
+        } catch (error) {
+            console.error('Failed to start new conversation:', error)
+        }
+    }
+
     const NavItem: React.FC<NavItemProps> = ({
         icon: Icon,
         label,
         active,
         onClick,
+        loading = false,
+        newChat,
     }) => (
         <Button
             variant={active ? 'default' : 'ghost'}
             onClick={onClick}
+            disabled={loading}
+            style={
+                newChat
+                    ? {
+                          color: themeColor,
+                      }
+                    : undefined
+            }
             className={cn(
-                'w-full justify-start gap-3 px-4 py-3 h-auto font-medium transition-all',
+                'w-full justify-start gap-3 h-auto font-medium transition-all',
+                newChat ? 'py-2' : 'px-4 py-3',
                 active
                     ? 'bg-primary text-primary-foreground hover:bg-primary/90'
                     : 'text-muted-foreground hover:text-foreground hover:bg-accent'
             )}
         >
-            <Icon size={18} />
+            {loading ? (
+                <LoaderIcon size={18} className="animate-spin" />
+            ) : newChat ? (
+                <div
+                    className="p-2 rounded-md"
+                    style={{
+                        backgroundColor: themeColor,
+                        color: currentTheme == 'light' ? 'white' : `black`,
+                    }}
+                >
+                    <Icon size={18} />
+                </div>
+            ) : (
+                <Icon size={18} />
+            )}
             <span>{label}</span>
         </Button>
     )
@@ -108,6 +163,20 @@ const SideMenuBar = ({
 
                 {/* Navigation */}
                 <nav className="flex-1 space-y-2 p-4">
+                    {/* New Chat Button */}
+                    <NavItem
+                        icon={Plus}
+                        label="New Chat"
+                        active={false}
+                        onClick={handleNewChat}
+                        loading={isLoadingNewThread}
+                        newChat
+                        currentTheme={currentTheme}
+                    />
+
+                    {/* Divider */}
+                    <Separator orientation="horizontal" />
+
                     <NavItem
                         icon={MessageSquare}
                         label="Customer Interface"

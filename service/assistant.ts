@@ -143,7 +143,7 @@ class AssistantService {
     }
 
     // UUID Methods
-    private async generateThreadId(
+    async generateThreadId(
         options?: RequestOptions
     ): Promise<ApiResponse<ThreadId>> {
         return this.makeRequest<ThreadId>('/uuids/thread_id', {
@@ -247,13 +247,9 @@ class AssistantService {
         token?: string
     ): Promise<ApiResponse<ReadableStream<Uint8Array>>> {
         try {
-            const { data, error } = await this.generateThreadId()
-            console.log('data', data)
-            console.log('error', error)
             const searchParams = new URLSearchParams({
                 user_input: params.user_input,
-                thread_id:
-                    params.thread_id ?? data?.thread_id ?? crypto.randomUUID(),
+                thread_id: params.thread_id ?? crypto.randomUUID(),
                 agent_id: params.agent_id,
             })
             const baseUrl = getAPIBaseURL()
