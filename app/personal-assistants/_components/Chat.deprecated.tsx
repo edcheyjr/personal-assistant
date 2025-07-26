@@ -207,6 +207,7 @@ const VoiceAICustomerInterface: React.FC = () => {
             } = await streamAgentResponseAction({
                 user_input: userMessage,
                 agent_id: '7701aaeb-b495-44cd-81f4-0307bbbeefcc',
+                thread_id: '',
             })
 
             if (typeof stream == 'string' || error || status !== 200) {
