@@ -109,7 +109,6 @@ export default function LoginForm() {
                                             />
                                         </div>
                                     </FormControl>
-
                                     <FormMessage />
                                 </div>
                             </FormItem>
@@ -123,7 +122,6 @@ export default function LoginForm() {
                                 <FormLabel htmlFor="product_code">
                                     Password
                                 </FormLabel>
-
                                 <div className="w-full">
                                     <FormControl>
                                         <div className="relative w-full">
@@ -150,7 +148,6 @@ export default function LoginForm() {
                                 <FormLabel className="hidden shrink-0">
                                     remember me
                                 </FormLabel>
-
                                 <div className="w-full">
                                     <FormControl>
                                         <FormLabel
