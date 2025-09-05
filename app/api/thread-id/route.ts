@@ -1,13 +1,12 @@
-import { auth } from '@/lib/auth'
 import { assistantService } from '@/service/assistant'
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 
-export async function GET(req: NextRequest) {
+export async function GET() {
     try {
         const apiResponse = await assistantService.generateThreadId()
         return NextResponse.json(apiResponse)
     } catch (error) {
-        console.error('Error fetching agents:', error)
+        console.error('Error fetching thread id:', error)
 
         return NextResponse.json(
             {

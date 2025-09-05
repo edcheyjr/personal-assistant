@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
         // Extract query parameters
 
         // Get authorization token from headers
-        const token = session?.user.access_token
+        const token = session?.accessToken
         const limit =
             parseInt(req.nextUrl.searchParams.get('limit') as string) || 100
         const skip =

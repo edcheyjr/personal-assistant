@@ -20,7 +20,6 @@ import { AgentType } from '@/types/agent'
 import { useAgentContext } from '@/providers/agents-provider'
 import { useMessages } from '@/providers/message-provider' // Import the messages provider
 import { useRouter } from 'next/navigation'
-import { signOut } from 'next-auth/react'
 import { Separator } from '@/components/ui/separator'
 import { useThemeColor } from '@/providers/color-theme-provider'
 import { useTheme } from 'next-themes'
@@ -69,8 +68,20 @@ const SideMenuBar = ({
 
     const handleSignOut = async () => {
         setLoading(true)
-        await signOut()
-        setLoading(false)
+        try {
+            const response = await fetch("/api/auth/logout", {
+                method: "GET",
+            });
+
+            if (response.ok) {
+                // Redirect to auth page
+                router.push("/auth");
+            }
+        } catch (error) {
+            console.error("Logout error:", error);
+        } finally {
+            setLoading(false)
+        }
     }
 
     const handleNewChat = async () => {

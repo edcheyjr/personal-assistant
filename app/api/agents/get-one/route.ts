@@ -7,7 +7,7 @@ export async function GET(req: NextRequest) {
         const session = await auth()
         const id = (req.nextUrl.searchParams.get('id') as string) || ''
         // Get authorization token from headers
-        const token = session?.user.access_token
+        const token = session?.accessToken
         const apiResponse = await assistantService.getAgent(id, token)
         return NextResponse.json(apiResponse)
     } catch (error) {

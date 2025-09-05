@@ -1,210 +1,114 @@
-'use client'
+"use client";
+import { cn } from "@/utils/cn";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import Image from "next/image";
+import AuthImage from "@/public/images/login.png";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
-import {
-    Form,
-    FormControl,
-    FormDescription,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
-} from '@/components/ui/form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import { useForm } from 'react-hook-form'
-import { Input } from '@/components/ui/input'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Button } from '@/components/ui/button'
-import { PasswordInput } from '@/components/inputs'
-import { loginSchema } from '@/lib/validation/auth'
-import { routes } from '@/lib/routes'
-import { signIn, signOut, useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
-import { useState } from 'react'
-import { Loader } from 'lucide-react'
-import { FormMessages } from '@/components/MessageInfo'
-import { toast } from 'sonner'
+export default function LoginForm({
+  className,
+  ...props
+}: React.ComponentProps<"div">) {
+  const router = useRouter();
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
 
-export default function LoginForm() {
-    const [loading, setLoading] = useState(false)
-    const router = useRouter()
-    const form = useForm<z.infer<typeof loginSchema>>({
-        resolver: zodResolver(loginSchema),
-        defaultValues: {
-            email: '',
-            password: '',
-            'remember-me': false,
-        },
-    })
-    const {
-        formState: { isValid },
-    } = form
+  const login = () => {
+    const redirectUri =
+      process.env.NEXT_PUBLIC_AUTH0_REDIRECT_URI ||
+      `${window.location.origin}/api/auth/callback`;
 
-    function onSubmit({
-        // TODO: add remember
-        'remember-me': remember,
-        ...values
-    }: z.infer<typeof loginSchema>) {
-        console.log('submmitijnf')
+    const params = new URLSearchParams({
+      response_type: "code",
+      client_id: process.env.NEXT_PUBLIC_AUTH0_CLIENT_ID!,
+      redirect_uri: redirectUri,
+      audience: process.env.NEXT_PUBLIC_AUTH0_AUDIENCE!,
+      scope: "openid profile email",
+    });
 
-        setLoading(true)
-        toast.promise(
-            signIn('credentials', {
-                ...values,
-                redirect: false,
-            }),
-            {
-                loading: 'Loading...',
-                success: (response) => {
-                    if (response.error) {
-                        throw Error(
-                            'Something went wrong. Check your credentials and try again or contact support if the problem persists.'
-                        )
-                    }
+    setIsAuthenticating(true);
+    window.location.href = `https://${process.env.NEXT_PUBLIC_AUTH0_DOMAIN}/authorize?${params}`;
+  };
 
-                    router.push('/')
-                    return 'Login success, please wait...'
-                },
-                error: (response) => {
-                    console.log('response', response)
-                    return 'Something went wrong. Check your credentials and try again or contact support if the problem persists.'
-                },
-                finally: () => {
-                    setLoading(false)
-                },
-            }
-        )
-    }
+  useEffect(() => {
+    // Check if user is already authenticated on page load
+    const checkAuth = () => {
+      const userCookie = document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("user="));
 
-    function onReset() {
-        form.reset()
-        form.clearErrors()
-    }
+      if (userCookie) {
+        router.push("/");
+      }
+    };
 
+    checkAuth();
+
+    // Also check when page becomes visible (user returns from auth)
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        setTimeout(checkAuth, 500); // Small delay for cookies to be set
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [router]);
+
+  if (isAuthenticating) {
     return (
-        <Form {...form}>
-            <form
-                onSubmit={form.handleSubmit(onSubmit)}
-                onReset={onReset}
-                className="space-y-8 @container"
-            >
-                <div className="grid grid-cols-12 gap-4">
-                    <FormField
-                        control={form.control}
-                        name="email"
-                        render={({ field, fieldState, formState }) => (
-                            <FormItem className="col-span-12 col-start-auto flex self-end flex-col gap-2 space-y-0 items-start">
-                                <FormLabel htmlFor="email">Email</FormLabel>
+      <div className={cn("flex flex-col gap-6", className)} {...props}>
+        <Card className="overflow-hidden">
+          <CardContent className="flex items-center justify-center p-20">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-muted-foreground">Authenticating...</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
-                                <div className="w-full">
-                                    <FormControl>
-                                        <div className="relative w-full">
-                                            <Input
-                                                key="email-input-0"
-                                                placeholder="info@example.com"
-                                                type="email"
-                                                id="email-input-0"
-                                                className=" "
-                                                {...field}
-                                            />
-                                        </div>
-                                    </FormControl>
-                                    <FormMessage />
-                                </div>
-                            </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name="password"
-                        render={({ field, fieldState, formState }) => (
-                            <FormItem className="col-span-12 col-start-auto flex self-end flex-col gap-2 space-y-0 items-start">
-                                <FormLabel htmlFor="product_code">
-                                    Password
-                                </FormLabel>
-                                <div className="w-full">
-                                    <FormControl>
-                                        <div className="relative w-full">
-                                            <PasswordInput
-                                                key="password-input-0"
-                                                placeholder="password"
-                                                id="password-input-0"
-                                                className=" "
-                                                {...field}
-                                            />
-                                        </div>
-                                    </FormControl>
-                                    {/* <FormDescription></FormDescription> */}
-                                    <FormMessage />
-                                </div>
-                            </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name="remember-me"
-                        render={({ field: { value, onChange, ...field } }) => (
-                            <FormItem className="col-span-12 col-start-auto flex self-end flex-col gap-2 space-y-0 items-start">
-                                <FormLabel className="hidden shrink-0">
-                                    remember me
-                                </FormLabel>
-                                <div className="w-full">
-                                    <FormControl>
-                                        <FormLabel
-                                            key="checkbox-0"
-                                            className="border-0 p-0 w-full flex items-start has-[[data-state=checked]]:border-primary"
-                                            htmlFor="checkbox-0"
-                                        >
-                                            <Checkbox
-                                                id="checkbox-0"
-                                                className="items-center"
-                                                {...field}
-                                                checked={value}
-                                                onCheckedChange={onChange}
-                                            />
-                                            <div className="grid gap-1.5 leading-none">
-                                                <FormLabel>
-                                                    remember me
-                                                </FormLabel>
-                                                <p className="text-sm text-muted-foreground"></p>
-                                            </div>
-                                        </FormLabel>
-                                    </FormControl>
-
-                                    <FormMessage />
-                                </div>
-                            </FormItem>
-                        )}
-                    />
-                    <FormItem className="col-span-12 col-start-auto flex self-end flex-col gap-2 space-y-0 items-start">
-                        <FormLabel className="hidden shrink-0">
-                            Submit
-                        </FormLabel>
-
-                        <div className="w-full">
-                            <FormControl>
-                                <Button
-                                    disabled={!isValid || loading}
-                                    key="submit-button-0"
-                                    id="submit-button-0"
-                                    name=""
-                                    className="w-full"
-                                    type="submit"
-                                    variant="default"
-                                >
-                                    {loading ? (
-                                        <Loader className="size-5 animate-spin" />
-                                    ) : (
-                                        'Login'
-                                    )}{' '}
-                                </Button>
-                            </FormControl>
-
-                            <FormMessage />
-                        </div>
-                    </FormItem>
-                </div>
-            </form>
-        </Form>
-    )
+  return (
+    <div className={cn("flex flex-col gap-6", className)} {...props}>
+      <Card className="overflow-hidden">
+        <CardContent className="grid p-0 md:grid-cols-2">
+          <div className="p-6 md:p-8 lg:py-20">
+            <div className="flex flex-col gap-6">
+              <div className="flex flex-col items-center text-center">
+                <h1 className="text-2xl font-bold">Welcome back</h1>
+                <p className="text-balance text-muted-foreground">
+                  Login to your Multi Agents account
+                </p>
+              </div>
+              <Button
+                variant="default"
+                className="w-full font-bold"
+                onClick={() => login()}
+              >
+                Login or Signup
+              </Button>
+            </div>
+          </div>
+          <div className="relative hidden bg-muted md:block">
+            <Image
+              src={AuthImage}
+              alt="Login illustration image"
+              fill
+              className="size-full absolute inset-0 object-cover dark:brightness-[0.4] dark:grayscale transition-all duration-200 ease-in-out"
+            />
+          </div>
+        </CardContent>
+      </Card>
+      <div className="text-balance text-center text-xs text-muted-foreground [&_a]:underline [&_a]:underline-offset-4 hover:[&_a]:text-primary">
+        By clicking continue, you agree to our <a href="#">Terms of Service</a>{" "}
+        and <a href="#">Privacy Policy</a>.
+      </div>
+    </div>
+  );
 }

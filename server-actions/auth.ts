@@ -1,15 +1,11 @@
 'use server'
 
-import { signIn, signOut } from '@/lib/auth'
 import { loginSchema } from '@/lib/validation/auth'
 import { AuthUser } from '@/types/user'
-import { AuthError } from 'next-auth'
+import { redirect } from 'next/navigation'
 import z from 'zod'
 
 export async function loginUser(data: z.infer<typeof loginSchema>) {
-    const apiResponse: Response | null = null
-    const userDTO: AuthUser | null = null
-
     //  Validate user credentials
     const validationInfo = loginSchema.safeParse(data)
     if (!validationInfo.success) {
@@ -22,27 +18,13 @@ export async function loginUser(data: z.infer<typeof loginSchema>) {
     }
     const validatedData = validationInfo.data
 
-    // Sign in the user and redirect to the dashboard
+    // For custom auth, redirect to Auth0 login
     try {
-        await signIn('credentials', validatedData)
-        return {
-            success: true,
-            message: 'You have been logged in successfully',
-            data: { urlToRedirect: '/' },
-        }
+        // In your custom auth system, the login is handled by Auth0 redirect
+        // This server action now just handles the redirect
+        redirect(`https://${process.env.AUTH0_DOMAIN}/authorize?response_type=code&client_id=${process.env.AUTH0_CLIENT_ID}&redirect_uri=${process.env.AUTH0_REDIRECT_URI}&scope=openid profile email&audience=${process.env.AUTH0_AUDIENCE}`)
     } catch (error: any) {
-        let errorMessage: string =
-            'Failed to login. Please check if your credentials are valid or try again later.'
-        if (error instanceof AuthError) {
-            console.log('error', error)
-            switch (error.name) {
-                case 'CredentialsSignin':
-                    errorMessage = 'Invalid Credentials'
-                    break
-                default:
-                    errorMessage = 'Something went wrong'
-            }
-        }
+        const errorMessage = 'Failed to initiate login process.'
         return { success: false, message: errorMessage, data: null }
     }
 }
