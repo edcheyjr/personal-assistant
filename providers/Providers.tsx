@@ -1,22 +1,21 @@
-'use client'
+"use client";
 
-import { SessionProvider } from 'next-auth/react'
 import {
-    ThemeProvider as NextThemesProvider,
-    ThemeProviderProps,
-} from 'next-themes'
-import { ThemeProvider } from './theme-provider'
-import QueryProvider from './query-provider'
-import { Session } from 'next-auth'
-import { AgentProvider } from './agents-provider'
-import { ColorThemeProvider } from './color-theme-provider'
-import { MessagesProvider } from './message-provider'
-
+  ThemeProvider as NextThemesProvider,
+  ThemeProviderProps,
+} from "next-themes";
+import { ThemeProvider } from "./theme-provider";
+import QueryProvider from "./query-provider";
+import { Session } from "@/types/user";
+import { ColorThemeProvider } from "./color-theme-provider";
+import { SessionProvider } from "./session-provider";
+import { AgentProvider } from "./agents-provider";
+import { MessagesProvider } from "./message-provider";
 type ProviderType = {
-    session?: Session
-    children: React.ReactNode
-    initialThemeColor?: string
-}
+  session?: Session;
+  children: React.ReactNode;
+  initialThemeColor?: string;
+};
 
 /**
  * Add all provider in this one function and pass it on children in layout
@@ -24,22 +23,26 @@ type ProviderType = {
  * @returns
  */
 export default function Providers({
-    children,
-    session,
-    initialThemeColor,
-    ...props
+  children,
+  session,
+  initialThemeColor,
+  ...props
 }: ProviderType & ThemeProviderProps) {
-    return (
-        <SessionProvider session={session}>
-            <QueryProvider>
-                <ThemeProvider {...props}>
-                    <ColorThemeProvider initialThemeColor={initialThemeColor}>
-                        <AgentProvider>
-                            <MessagesProvider>{children}</MessagesProvider>
-                        </AgentProvider>
-                    </ColorThemeProvider>
-                </ThemeProvider>
-            </QueryProvider>
-        </SessionProvider>
-    )
+  return (
+    <SessionProvider session={session}>
+      {/* <SessionMonitor session={session}> */}
+      <QueryProvider>
+        <AgentProvider>
+          <MessagesProvider>
+            <ThemeProvider {...props}>
+              <ColorThemeProvider initialThemeColor={initialThemeColor}>
+                {children}
+              </ColorThemeProvider>
+            </ThemeProvider>
+          </MessagesProvider>
+        </AgentProvider>
+      </QueryProvider>
+      {/* </SessionMonitor> */}
+    </SessionProvider>
+  );
 }

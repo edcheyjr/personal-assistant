@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
     try {
         const session = await auth()
 
-        const token = session?.user.access_token
+        const token = session?.accessToken
         const user_input = req.nextUrl.searchParams.get('input') as string
         const agent_id = req.nextUrl.searchParams.get('id') as string
         const thread_id = req.nextUrl.searchParams.get('thread-id') as string

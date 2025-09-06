@@ -6,7 +6,7 @@ import {
     PersonalityTraits,
     VoiceSettings,
 } from '@/types/agent'
-import { useSession } from 'next-auth/react'
+import { useSession } from '@/providers/session-provider'
 import React, {
     createContext,
     useContext,
@@ -201,7 +201,7 @@ export const AgentProvider: React.FC<AgentProviderProps> = ({
     onAgentUpdate,
     autoSelectFirst = true,
 }) => {
-    const { data: session } = useSession()
+    const { data: session, status } = useSession()
     const { data: data, isLoading, error } = useAgents()
     const agents = data?.data || []
     const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null)
@@ -210,6 +210,7 @@ export const AgentProvider: React.FC<AgentProviderProps> = ({
     useEffect(() => {
         if (
             session?.user &&
+            status === 'authenticated' &&
             autoSelectFirst &&
             agents &&
             agents.length > 0 &&
@@ -219,7 +220,7 @@ export const AgentProvider: React.FC<AgentProviderProps> = ({
             setSelectedAgent(firstAgent)
             onAgentChange?.(firstAgent)
         }
-    }, [session, agents, selectedAgent, autoSelectFirst, onAgentChange])
+    }, [session, status, agents, selectedAgent, autoSelectFirst, onAgentChange])
 
     // Actions
     const selectAgent = useCallback(
