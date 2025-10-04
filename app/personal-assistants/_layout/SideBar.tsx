@@ -13,11 +13,11 @@ import {
     Settings,
     X,
     Plus,
+    Users,
 } from 'lucide-react'
 import React, { useState } from 'react'
 import { cn } from '@/utils/cn'
-import { AgentType } from '@/types/agent'
-import { useAgentContext } from '@/providers/agents-provider'
+import { useAgentGroupContext } from '@/providers/agent-groups-provider'
 import { useMessages } from '@/providers/message-provider' // Import the messages provider
 import { useRouter } from 'next/navigation'
 import { Separator } from '@/components/ui/separator'
@@ -52,19 +52,17 @@ const SideMenuBar = ({
     const { themeColor } = useThemeColor()
     const router = useRouter()
     const [loading, setLoading] = useState(false)
-    const { agents, isLoading, error } = useAgentContext()
+    const { agentGroups, isLoading } = useAgentGroupContext()
     const {
         startNewConversation,
         state: { isLoadingNewThread },
     } = useMessages()
 
-    const numberUniqueAgentTypes = agents.reduce(
-        (set: Set<AgentType>, agent) => {
-            set.add(agent.agent_type)
-            return set
-        },
-        new Set<AgentType>()
-    ).size
+    // Calculate total agents from all agent groups
+    const totalAgents = agentGroups.reduce((total, group) => total + group.num_agents, 0)
+    
+    // Count unique architectures (replacing agent types)
+    const uniqueArchitectures = new Set(agentGroups.map(group => group.architecture)).size
 
     const handleSignOut = async () => {
         setLoading(true)
@@ -201,6 +199,12 @@ const SideMenuBar = ({
                         onClick={() => handleNavClick('agent-overview')}
                     /> */}
                     <NavItem
+                        icon={Users}
+                        label="Agent Groups"
+                        active={currentView === 'agent-groups'}
+                        onClick={() => handleNavClick('agent-groups')}
+                    />
+                    <NavItem
                         icon={Settings}
                         label="Agent Configuration"
                         active={currentView === 'agent-configuration'}
@@ -216,23 +220,23 @@ const SideMenuBar = ({
                                 Total Agents
                             </span>
                             <span className="font-medium text-foreground">
-                                {agents.length}
+                                {totalAgents}
                             </span>
                         </div>
                         <div className="flex justify-between items-center">
                             <span className="text-muted-foreground">
-                                Active Agents
+                                Agent Groups
                             </span>
                             <span className="font-medium text-foreground">
-                                {agents.length}
+                                {agentGroups.length}
                             </span>
                         </div>
                         <div className="flex justify-between items-center">
                             <span className="text-muted-foreground">
-                                Agent Types
+                                Architectures
                             </span>
                             <span className="font-medium text-foreground">
-                                {numberUniqueAgentTypes}
+                                {uniqueArchitectures}
                             </span>
                         </div>
                         <div className="flex justify-between items-center">
