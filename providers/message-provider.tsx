@@ -10,7 +10,6 @@ import React, {
 } from 'react'
 import { produce } from 'immer'
 import { StreamingMessage } from '@/types/message'
-import { useThreadId } from '@/hooks/api/use-thread-id'
 
 interface MemoryOperation {
     type: 'add_message_to_memory' | 'retrieve_memory'
@@ -217,17 +216,18 @@ export const MessagesProvider: React.FC<MessagesProviderProps> = ({
 }) => {
     const [state, dispatch] = useReducer(messagesReducer, initialState)
     const abortControllerRef = useRef<AbortController | null>(null)
-    const { data: uuidData, refetch: refetchUUID } = useThreadId()
 
     // Initialize with a thread ID on mount
     useEffect(() => {
-        if (uuidData?.data?.thread_id && !state.currentThreadId) {
+        if (!state.currentThreadId) {
+            // Generate initial thread ID client-side
+            const initialThreadId = crypto.randomUUID()
             dispatch({
                 type: 'SET_THREAD_ID',
-                threadId: uuidData.data.thread_id,
+                threadId: initialThreadId,
             })
         }
-    }, [uuidData?.data?.thread_id, state.currentThreadId])
+    }, [state.currentThreadId])
 
     const addUserMessage = (text: string) => {
         const message: StreamingMessage = {
@@ -316,18 +316,13 @@ export const MessagesProvider: React.FC<MessagesProviderProps> = ({
         try {
             dispatch({ type: 'SET_LOADING_NEW_THREAD', isLoading: true })
 
-            // Fetch a new UUID/thread ID
-            const { data: newUuidData } = await refetchUUID()
-            console.log('newUuidData', newUuidData)
+            // Generate UUID client-side for agent groups
+            const newThreadId = crypto.randomUUID()
 
-            if (newUuidData?.data?.thread_id) {
-                dispatch({
-                    type: 'START_NEW_CONVERSATION',
-                    threadId: newUuidData.data.thread_id,
-                })
-            } else {
-                throw new Error('Failed to get new thread ID')
-            }
+            dispatch({
+                type: 'START_NEW_CONVERSATION',
+                threadId: newThreadId,
+            })
         } catch (error) {
             console.error('Error starting new conversation:', error)
             dispatch({ type: 'SET_LOADING_NEW_THREAD', isLoading: false })
@@ -338,13 +333,12 @@ export const MessagesProvider: React.FC<MessagesProviderProps> = ({
 
     const refreshCurrentThread = async (): Promise<void> => {
         try {
-            const { data: newUuidData } = await refetchUUID()
-            if (newUuidData?.data?.thread_id) {
-                dispatch({
-                    type: 'SET_THREAD_ID',
-                    threadId: newUuidData.data.thread_id,
-                })
-            }
+            // Generate new thread ID client-side
+            const newThreadId = crypto.randomUUID()
+            dispatch({
+                type: 'SET_THREAD_ID',
+                threadId: newThreadId,
+            })
         } catch (error) {
             console.error('Error refreshing thread:', error)
         }

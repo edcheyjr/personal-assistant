@@ -9,7 +9,7 @@ import QueryProvider from "./query-provider";
 import { Session } from "@/types/user";
 import { ColorThemeProvider } from "./color-theme-provider";
 import { SessionProvider } from "./session-provider";
-import { AgentProvider } from "./agents-provider";
+import { AgentGroupProvider } from "./agent-groups-provider";
 import { MessagesProvider } from "./message-provider";
 type ProviderType = {
   session?: Session;
@@ -32,7 +32,7 @@ export default function Providers({
     <SessionProvider session={session}>
       {/* <SessionMonitor session={session}> */}
       <QueryProvider>
-        <AgentProvider>
+        <AgentGroupProvider>
           <MessagesProvider>
             <ThemeProvider {...props}>
               <ColorThemeProvider initialThemeColor={initialThemeColor}>
@@ -40,7 +40,7 @@ export default function Providers({
               </ColorThemeProvider>
             </ThemeProvider>
           </MessagesProvider>
-        </AgentProvider>
+        </AgentGroupProvider>
       </QueryProvider>
       {/* </SessionMonitor> */}
     </SessionProvider>

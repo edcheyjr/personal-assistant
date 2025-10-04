@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { User, LogOut, Settings } from "lucide-react";
+import React from "react";
+import { User, LogOut, Settings, Moon, Sun, Palette } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,6 +12,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { useTheme } from "next-themes";
+import { useThemeColor } from "@/providers/color-theme-provider";
+import { colorOptions } from "@/lib/theme";
+import { setStorageItem } from "@/utils/localstorageAccess";
+import { ColorKey } from "@/utils/constants";
+import { cn } from "@/utils/cn";
+import { useSession } from "@/providers/session-provider";
 
 export interface AuthUser {
   name: string;
@@ -20,46 +27,12 @@ export interface AuthUser {
 }
 
 const Profile = () => {
-  const [user, setUser] = useState<AuthUser | null>(null);
-  console.log("user", user);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: session, status } = useSession();
+  const { theme, setTheme } = useTheme();
+  const { themeColor, setThemeColor } = useThemeColor();
 
-  useEffect(() => {
-    // if (process.env.NODE_ENV === "development") {
-    //   const mockUser: AuthUser = {
-    //     name: "John Doe",
-    //     email: "john.doe@example.com",
-    //     picture: null,
-    //   };
-    //   setUser(mockUser);
-    //   setIsLoading(false);
-    //   return;
-    // }
-
-    // Get user from cookies
-    const getUserFromCookies = () => {
-      const cookies = document.cookie.split(";");
-      const userCookie = cookies.find((cookie) =>
-        cookie.trim().startsWith("user=")
-      );
-
-      if (userCookie) {
-        try {
-          const userValue = userCookie.split("=")[1];
-          const decodedUser = decodeURIComponent(userValue);
-          return JSON.parse(decodedUser);
-        } catch (error) {
-          console.error("Error parsing user cookie:", error);
-          return null;
-        }
-      }
-      return null;
-    };
-
-    const userData = getUserFromCookies();
-    setUser(userData);
-    setIsLoading(false);
-  }, []);
+  const user = session?.user;
+  const isLoading = status === "loading";
 
   const handleLogout = async () => {
     // In development mode, just refresh the page
@@ -89,6 +62,11 @@ const Profile = () => {
       .join("")
       .toUpperCase()
       .slice(0, 2);
+  };
+
+  const handleColorChange = (color: string) => {
+    setThemeColor(color);
+    setStorageItem(ColorKey, color);
   };
 
   if (isLoading) {
@@ -143,6 +121,56 @@ const Profile = () => {
             </div>
           </div>
         </DropdownMenuLabel>
+
+        <DropdownMenuSeparator />
+
+        {/* Theme Switch */}
+        <div className="px-2 py-2">
+          <div className="flex items-center justify-between px-2 py-1">
+            <div className="flex items-center gap-2">
+              {theme === "dark" ? (
+                <Moon className="size-4" />
+              ) : (
+                <Sun className="size-4" />
+              )}
+              <span className="text-sm font-medium">Theme</span>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              className="h-8 px-3"
+            >
+              {theme === "dark" ? "Light" : "Dark"}
+            </Button>
+          </div>
+        </div>
+
+        <DropdownMenuSeparator />
+
+        {/* Color Theme */}
+        <div className="px-2 py-2">
+          <div className="flex items-center gap-2 px-2 mb-2">
+            <Palette className="size-4" />
+            <span className="text-sm font-medium">Color Theme</span>
+          </div>
+          <div className="flex flex-wrap gap-2 px-2">
+            {colorOptions.map((color) => (
+              <button
+                key={color}
+                onClick={() => handleColorChange(color)}
+                className={cn(
+                  "size-8 rounded-md border-2 transition-all hover:scale-110",
+                  themeColor === color
+                    ? "border-foreground scale-110 ring-2 ring-offset-2 ring-foreground"
+                    : "border-border hover:border-foreground/50"
+                )}
+                style={{ backgroundColor: color }}
+                title={color}
+              />
+            ))}
+          </div>
+        </div>
 
         <DropdownMenuSeparator />
 

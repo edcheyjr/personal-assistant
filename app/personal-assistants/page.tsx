@@ -1,57 +1,92 @@
-'use client'
+"use client";
 
-import { ViewType } from '@/types/view'
-import React, { useState } from 'react'
-import SideMenuBar from './_layout/SideBar'
+import { ViewType } from "@/types/view";
+import React, { useState } from "react";
+import SideMenuBar from "./_layout/SideBar";
 
-import Chat from './_components/Chat'
-import Settings from './_components/Settings'
-import NavBar from './_layout/NavBar'
-import ThemeDemo from '@/components/ui/theme-demo'
-import { useAgent } from '@/hooks/api/use-agent'
-import { useAgents } from '@/hooks/api/use-agents'
+import Chat from "./_components/Chat";
+import AgentConfiguration from "./_components/AgentConfiguration";
+import AgentGroups from "./_components/AgentGroups";
+import NavBar from "./_layout/NavBar";
 
-export default function PersonalAssitants({ sessionData }: any) {
-    const { data, isLoading, error } = useAgents()
-    const [currentView, setCurrentView] =
-        useState<ViewType>('customer-interface')
-    const [sidebarOpen, setSidebarOpen] = useState<boolean>(false)
+export default function PersonalAssitants() {
+  const [currentView, setCurrentView] =
+    useState<ViewType>("customer-interface");
+  const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+  const [agentGroupView, setAgentGroupView] = useState<"list" | "configure">(
+    "list"
+  );
 
-    const toggleSidebar = (): void => {
-        setSidebarOpen(!sidebarOpen)
+  const toggleSidebar = (): void => {
+    setSidebarOpen(!sidebarOpen);
+  };
+
+  const handleNavClick = (view: ViewType): void => {
+    setCurrentView(view);
+    setSidebarOpen(false);
+    if (view === "agent-groups") {
+      setAgentGroupView("list");
+      setSelectedGroupId(null);
     }
+  };
 
-    const handleNavClick = (view: ViewType): void => {
-        setCurrentView(view)
-        setSidebarOpen(false)
-    }
-    return (
-        <div className="relative flex min-h-screen size-full overflow-hidden ">
-            {/* Sidebar Overlay for Mobile */}
+  const handleConfigureGroup = (groupId: string) => {
+    setSelectedGroupId(groupId);
+    setCurrentView("agent-configuration");
+  };
 
-            {/* Sidebar */}
-            <SideMenuBar
-                sidebarOpen={sidebarOpen}
-                currentView={currentView}
-                handleNavClick={handleNavClick}
-                toggleSidebar={toggleSidebar}
-            />
-            {/* Main Content */}
-            <div className="flex flex-1 flex-col">
-                {/* Top Bar */}
-                <NavBar toggleSidebar={toggleSidebar} />
-                {/* Chat Area */}
-                {currentView == 'customer-interface' ? (
-                    <Chat handleNavClick={handleNavClick} />
-                ) : (
-                    <></>
-                )}
-                {/* Agent Overview */}
-                {/* {currentView == 'agent-overview' ? <ThemeDemo /> : <></>} */}
+  const handleBackToGroups = () => {
+    setAgentGroupView("list");
+    setSelectedGroupId(null);
+  };
 
-                {/* Setting */}
-                {currentView == 'agent-configuration' ? <Settings /> : <></>}
-            </div>
-        </div>
-    )
+  const handleDeleteGroup = () => {
+    // Navigate back to agent groups creation page
+    setCurrentView("agent-groups");
+    setAgentGroupView("list");
+    setSelectedGroupId(null);
+  };
+
+  return (
+    <div className="relative flex min-h-screen size-full overflow-hidden ">
+      {/* Sidebar Overlay for Mobile */}
+
+      {/* Sidebar */}
+      <SideMenuBar
+        sidebarOpen={sidebarOpen}
+        currentView={currentView}
+        handleNavClick={handleNavClick}
+        toggleSidebar={toggleSidebar}
+      />
+      {/* Main Content */}
+      <div className="flex flex-1 flex-col">
+        {/* Top Bar */}
+        <NavBar toggleSidebar={toggleSidebar} />
+        {/* Chat Area */}
+        {currentView == "customer-interface" ? (
+          <Chat handleNavClick={handleNavClick} />
+        ) : (
+          <></>
+        )}
+
+        {/* Agent Groups */}
+        {currentView == "agent-groups" && agentGroupView === "list" ? (
+          <AgentGroups onConfigureGroup={handleConfigureGroup} />
+        ) : (
+          <></>
+        )}
+
+        {/* Agent Configuration */}
+        {currentView == "agent-configuration" ? (
+          <AgentConfiguration
+            selectedGroupId={selectedGroupId}
+            onDeleteGroup={handleDeleteGroup}
+          />
+        ) : (
+          <></>
+        )}
+      </div>
+    </div>
+  );
 }
