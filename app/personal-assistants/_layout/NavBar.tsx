@@ -54,10 +54,6 @@ const NavBar = ({ toggleSidebar }: Props) => {
             ? `${selectedAgentGroup.name} Group`
             : "AI Voice Assistant"}
         </span>
-        {/* 
-                <span className="text-sm text-purple-200 font-semibold bg-black/5 px-2 py-1 rounded">
-                    • Ready
-                </span> */}
       </div>
       <div className="flex items-center gap-3">
         <ThemeMenu />

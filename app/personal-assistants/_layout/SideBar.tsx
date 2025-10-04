@@ -1,5 +1,3 @@
-//TODO: refactor and clean
-
 "use client";
 
 import Logo from "@/components/Logo";
@@ -207,12 +205,6 @@ const SideMenuBar = ({
             active={currentView === "customer-interface"}
             onClick={() => handleNavClick("customer-interface")}
           />
-          {/* <NavItem
-                        icon={BarChart3}
-                        label="Agent Overview"
-                        active={currentView === 'agent-overview'}
-                        onClick={() => handleNavClick('agent-overview')}
-                    /> */}
           <NavItem
             icon={Users}
             label="Agent Groups"
