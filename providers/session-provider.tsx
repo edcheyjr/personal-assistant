@@ -1,5 +1,6 @@
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { createContext, useContext, useEffect, useState } from "react";
+import Cookies from "js-cookie";
 
 type Session = {
   user: any;
@@ -35,9 +36,68 @@ export function SessionProvider({
   const [status, setStatus] = useState<
     "loading" | "authenticated" | "unauthenticated"
   >("loading");
+  const [hasCheckedCookies, setHasCheckedCookies] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
+  // Check for client-side cookies on mount and when URL changes (after login redirect)
   useEffect(() => {
+    const checkClientSession = () => {
+      console.log("Checking client cookies...");
+      console.log("All cookies:", document.cookie);
+
+      // Note: access_token is httpOnly, so we can't read it client-side
+      // We only check for the user cookie which is accessible
+      const userCookie = Cookies.get("user");
+
+      console.log("User cookie:", userCookie);
+
+      if (userCookie) {
+        try {
+          const user = JSON.parse(userCookie);
+          // We know if user cookie exists, access_token exists too (set together in callback)
+          const newSession = {
+            user,
+            accessToken: "exists", // Can't read httpOnly cookie, but we know it exists
+            isAuthenticated: true,
+          };
+          console.log("Setting session from cookies:", newSession);
+          setSession(newSession);
+          setStatus("authenticated");
+        } catch (error) {
+          console.error("Failed to parse user cookie:", error);
+        }
+      } else {
+        console.log("No user cookie found, checking initial session:", initialSession);
+        // If no cookies but we have initial session from server, use it
+        if (initialSession?.isAuthenticated) {
+          setSession(initialSession);
+          setStatus("authenticated");
+        }
+      }
+      // Mark that we've checked cookies
+      setHasCheckedCookies(true);
+    };
+
+    // Check on mount
+    checkClientSession();
+
+    // Check again if we detect auth success in URL
+    const authSuccess = searchParams?.get("auth");
+    if (authSuccess === "success") {
+      console.log("Auth success detected, rechecking cookies...");
+      setTimeout(() => checkClientSession(), 100); // Small delay to ensure cookies are set
+    }
+  }, [pathname, searchParams, initialSession]);
+
+  // Only validate session after we've checked cookies
+  useEffect(() => {
+    // Don't validate until we've checked client-side cookies
+    if (!hasCheckedCookies) {
+      return;
+    }
+
     console.log("Session check:", session);
 
     // Check if session is invalid (user logged out or session expired)
@@ -54,12 +114,14 @@ export function SessionProvider({
       localStorage.clear();
       sessionStorage.clear();
 
-      // Redirect to login page
-      router.push("/auth"); // Adjust route as needed
+      // Redirect to login page only if not already on auth page
+      if (!pathname?.startsWith("/auth")) {
+        router.push("/auth");
+      }
     } else {
       setStatus("authenticated");
     }
-  }, [session, router]);
+  }, [session, router, pathname, hasCheckedCookies]);
 
   // Function to update session
   const updateSession = (newSession: Session | null) => {

@@ -29,10 +29,16 @@ export interface AuthUser {
 const Profile = () => {
   const { data: session, status } = useSession();
   const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = React.useState(false);
   const { themeColor, setThemeColor } = useThemeColor();
 
   const user = session?.user;
   const isLoading = status === "loading";
+
+  // Prevent hydration mismatch
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleLogout = async () => {
     // In development mode, just refresh the page
@@ -125,26 +131,28 @@ const Profile = () => {
         <DropdownMenuSeparator />
 
         {/* Theme Switch */}
-        <div className="px-2 py-2">
-          <div className="flex items-center justify-between px-2 py-1">
-            <div className="flex items-center gap-2">
-              {theme === "dark" ? (
-                <Moon className="size-4" />
-              ) : (
-                <Sun className="size-4" />
-              )}
-              <span className="text-sm font-medium">Theme</span>
+        {mounted && (
+          <div className="px-2 py-2">
+            <div className="flex items-center justify-between px-2 py-1">
+              <div className="flex items-center gap-2">
+                {theme === "dark" ? (
+                  <Moon className="size-4" />
+                ) : (
+                  <Sun className="size-4" />
+                )}
+                <span className="text-sm font-medium">Theme</span>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                className="h-8 px-3"
+              >
+                {theme === "dark" ? "Light" : "Dark"}
+              </Button>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="h-8 px-3"
-            >
-              {theme === "dark" ? "Light" : "Dark"}
-            </Button>
           </div>
-        </div>
+        )}
 
         <DropdownMenuSeparator />
 
