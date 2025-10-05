@@ -46,6 +46,7 @@ export default async function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        suppressHydrationWarning
       >
         <div className="relative min-h-screen font-[family-name:var(--font-geist-sans)]">
           <Providers
