@@ -54,7 +54,7 @@ export interface CreateAgentGroupAgent {
 
 export interface AgentConfiguration {
     agents_index: number
-    sub_agents: string[]
+    sub_agents: number[] // Just an array of agent indices (numbers)
 }
 
 export interface OrchestrationConfigurations {

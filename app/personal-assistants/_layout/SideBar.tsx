@@ -12,6 +12,7 @@ import {
   X,
   Plus,
   Users,
+  PlusCircle,
 } from "lucide-react";
 import React, { useState } from "react";
 import { cn } from "@/utils/cn";
@@ -206,10 +207,10 @@ const SideMenuBar = ({
             onClick={() => handleNavClick("customer-interface")}
           />
           <NavItem
-            icon={Users}
-            label="Agent Groups"
-            active={currentView === "agent-groups"}
-            onClick={() => handleNavClick("agent-groups")}
+            icon={PlusCircle}
+            label="Multi-Agent Creation"
+            active={currentView === "multi-agent-creation"}
+            onClick={() => handleNavClick("multi-agent-creation")}
           />
           <NavItem
             icon={Settings}

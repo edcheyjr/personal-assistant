@@ -5,8 +5,8 @@ import React, { useState } from "react";
 import SideMenuBar from "./_layout/SideBar";
 
 import Chat from "./_components/Chat";
-import AgentConfiguration from "./_components/AgentConfiguration";
-import AgentGroups from "./_components/AgentGroups";
+import MultiAgentCreation from "./_components/final/MultiAgentCreation";
+import FinalAgentConfiguration from "./_components/final/AgentConfiguration";
 import NavBar from "./_layout/NavBar";
 
 export default function PersonalAssitants() {
@@ -25,8 +25,12 @@ export default function PersonalAssitants() {
   const handleNavClick = (view: ViewType): void => {
     setCurrentView(view);
     setSidebarOpen(false);
-    if (view === "agent-groups") {
+    if (view === "multi-agent-creation") {
       setAgentGroupView("list");
+      setSelectedGroupId(null);
+    }
+    // Reset selectedGroupId when navigating to agent-configuration to show empty state
+    if (view === "agent-configuration") {
       setSelectedGroupId(null);
     }
   };
@@ -36,16 +40,17 @@ export default function PersonalAssitants() {
     setCurrentView("agent-configuration");
   };
 
-  const handleBackToGroups = () => {
+  const handleDeleteGroup = () => {
+    // Navigate back to multi-agent creation page
+    setCurrentView("multi-agent-creation");
     setAgentGroupView("list");
     setSelectedGroupId(null);
   };
 
-  const handleDeleteGroup = () => {
-    // Navigate back to agent groups creation page
-    setCurrentView("agent-groups");
+  const handleCreateGroup = () => {
+    // Navigate to multi-agent creation page
+    setCurrentView("multi-agent-creation");
     setAgentGroupView("list");
-    setSelectedGroupId(null);
   };
 
   return (
@@ -70,18 +75,19 @@ export default function PersonalAssitants() {
           <></>
         )}
 
-        {/* Agent Groups */}
-        {currentView == "agent-groups" && agentGroupView === "list" ? (
-          <AgentGroups onConfigureGroup={handleConfigureGroup} />
+        {/* Multi-Agent Creation */}
+        {currentView == "multi-agent-creation" && agentGroupView === "list" ? (
+          <MultiAgentCreation onConfigureGroup={handleConfigureGroup} />
         ) : (
           <></>
         )}
 
         {/* Agent Configuration */}
         {currentView == "agent-configuration" ? (
-          <AgentConfiguration
+          <FinalAgentConfiguration
             selectedGroupId={selectedGroupId}
             onDeleteGroup={handleDeleteGroup}
+            onCreateGroup={handleCreateGroup}
           />
         ) : (
           <></>
