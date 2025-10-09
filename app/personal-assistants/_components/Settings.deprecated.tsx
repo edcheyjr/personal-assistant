@@ -45,7 +45,7 @@ import CreateAgentModal from "./CreateAgentModal.deprecated";
 import {
   useAgentContext,
   useAgentSelection,
-} from "@/providers/agents-provider";
+} from "@/providers/agents-provider.deprecated";
 import { personalityTraits as suggestedTraits } from "@/lib/data/personality";
 import { Label } from "@/components/ui/label";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
