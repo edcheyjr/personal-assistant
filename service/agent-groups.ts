@@ -56,6 +56,8 @@ export class AgentGroupService {
     data: CreateAgentGroupRequest
   ): Promise<ApiResponse<CreateAgentGroupResponse>> {
     try {
+      console.log("Sending agent group creation request:", JSON.stringify(data, null, 2));
+
       const response = await fetch("/api/agent-groups/", {
         method: "POST",
         headers: {
@@ -65,12 +67,30 @@ export class AgentGroupService {
       });
 
       const responseData = await response.json();
+      console.log("Agent group creation response:", responseData);
+
+      // Format error message properly
+      let errorMessage = "Failed to create agent group";
+      if (!response.ok && responseData.detail) {
+        if (Array.isArray(responseData.detail)) {
+          // Validation errors - format them as string
+          errorMessage = responseData.detail
+            .map((err: any) => {
+              const location = err.loc ? err.loc.join(' → ') : 'Unknown field';
+              return `${location}: ${err.msg}`;
+            })
+            .join('\n');
+        } else if (typeof responseData.detail === 'string') {
+          errorMessage = responseData.detail;
+        } else {
+          // Object error - stringify it
+          errorMessage = JSON.stringify(responseData.detail);
+        }
+      }
 
       return {
         data: response.ok ? responseData : undefined,
-        error: response.ok
-          ? undefined
-          : responseData.detail || "Failed to create agent group",
+        error: response.ok ? undefined : errorMessage,
         status: response.status,
       };
     } catch (error) {
