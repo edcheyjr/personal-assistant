@@ -417,8 +417,11 @@ const AdvancedCoordinationSettings: React.FC<AdvancedCoordinationSettingsProps> 
         return (
           <Input
             type="number"
-            value={value}
-            onChange={(e) => handleSettingChange(setting.key, parseInt(e.target.value))}
+            value={value ?? ''}
+            onChange={(e) => {
+              const parsed = parseInt(e.target.value);
+              handleSettingChange(setting.key, isNaN(parsed) ? '' : parsed);
+            }}
             min={setting.min}
             max={setting.max}
             className="w-full"

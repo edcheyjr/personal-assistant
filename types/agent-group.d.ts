@@ -53,8 +53,8 @@ export interface CreateAgentGroupAgent {
 }
 
 export interface AgentConfiguration {
-    agents_index: number
-    sub_agents: number[] // Just an array of agent indices (numbers)
+    [key: string]: number | AgentConfiguration[] // Dynamic key based on nesting level (agents_index, agents_index_1, etc.)
+    sub_agents: AgentConfiguration[]
 }
 
 export interface OrchestrationConfigurations {

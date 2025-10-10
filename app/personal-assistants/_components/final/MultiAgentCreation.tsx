@@ -26,6 +26,7 @@ import {
   CreateAgentGroupRequest,
   LLMConfiguration,
   Tier,
+  AgentConfiguration,
 } from "@/types/agent-group";
 import AdvancedCoordinationSettings from './AdvancedCoordinationSettings';
 
@@ -35,7 +36,7 @@ interface AgentStructure {
   role: string;
   selectedTiers: string[];
   tier_id?: string;
-  sub_agents: number[]; // Array of agent indices
+  sub_agents: number[]; // Array of agent indices (will be converted to nested structure for API)
 }
 
 // State interface
@@ -422,10 +423,28 @@ const MultiAgentCreation: React.FC<{ onConfigureGroup?: (groupId: string) => voi
         capabilities: { tools: [], knowledge_bases: [] },
       })),
       orchestration_configurations: {
-        agents_configurations: state.agents.map((agent, index) => ({
-          agents_index: index,
-          sub_agents: agent.sub_agents || [],
-        })),
+        agents_configurations: state.agents.map((agent, index) => {
+          // Build nested sub-agent configurations recursively with cycle detection
+          // The key changes from agents_index -> agents_index_1 -> agents_index_2, etc.
+          const buildSubAgentConfig = (subAgentIndices: number[], visited: Set<number> = new Set(), level: number = 0): AgentConfiguration[] => {
+            return subAgentIndices
+              .filter(subIdx => !visited.has(subIdx)) // Prevent cycles
+              .map(subIdx => {
+                const newVisited = new Set(visited);
+                newVisited.add(subIdx);
+                const indexKey = level === 0 ? 'agents_index' : `agents_index_${level}`;
+                return {
+                  [indexKey]: subIdx,
+                  sub_agents: buildSubAgentConfig(state.agents[subIdx]?.sub_agents || [], newVisited, level + 1)
+                } as AgentConfiguration;
+              });
+          };
+
+          return {
+            agents_index: index,
+            sub_agents: buildSubAgentConfig(agent.sub_agents || [], new Set([index]), 1)
+          };
+        }),
       },
     };
 

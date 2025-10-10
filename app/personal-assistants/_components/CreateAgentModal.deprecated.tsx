@@ -28,7 +28,7 @@ import { useSession } from "@/providers/session-provider";
 import { CreateAgentRequest } from "@/types/agent";
 import SelectedInput from "@/components/inputs/SpecialSelectionInput";
 import { personalityTraits } from "@/lib/data/personality";
-import { useAgentSelection } from "@/providers/agents-provider";
+import { useAgentSelection } from "@/providers/agents-provider.deprecated.jsx";
 
 type Props = {
   isOpen: boolean;
