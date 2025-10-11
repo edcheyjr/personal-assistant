@@ -1,75 +1,56 @@
-import { colorOptions, generateThemeCSS } from '@/lib/theme'
-import { ColorKey } from '@/utils/constants'
-import Cookies from 'js-cookie'
-import React from 'react'
+import { generateThemeCSS } from "@/lib/theme";
+import React from "react";
+
+// Modern, appealing default color - A vibrant purple/indigo
+const DEFAULT_THEME_COLOR = "#8b5cf6"; // Vibrant purple, modern and professional
 
 interface ThemeContextType {
-    themeColor: string
-    themeColorCss: {
-        '--theme-primary': string
-        '--theme-primary-foreground': string
-        '--theme-primary-hover': string
-        '--theme-primary-light': string
-        '--theme-primary-alpha': string
-    }
-    setThemeColor: (color: string) => void
+  themeColor: string;
+  themeColorCss: {
+    "--theme-primary": string;
+    "--theme-primary-foreground": string;
+    "--theme-primary-hover": string;
+    "--theme-primary-light": string;
+    "--theme-primary-alpha": string;
+  };
+  setThemeColor: (color: string) => void;
 }
 
 const ThemeContext = React.createContext<ThemeContextType | undefined>(
-    undefined
-)
+  undefined
+);
 
 interface ThemeProviderProps {
-    children: React.ReactNode
-    initialThemeColor?: string // Server-sent cookie value
+  children: React.ReactNode;
+  initialThemeColor?: string; // Kept for compatibility but not used
 }
 
-export function ColorThemeProvider({
-    children,
-    initialThemeColor,
-}: ThemeProviderProps) {
-    // Use the server-sent cookie as initial value if available,
-    // otherwise fall back to client-side cookie or default
-    const [themeColor, setThemeColor] = React.useState(
-        () => initialThemeColor || Cookies.get(ColorKey) || colorOptions[0]
-    )
+export function ColorThemeProvider({ children }: ThemeProviderProps) {
+  // Use fixed modern color - no more user selection
+  const themeColor = DEFAULT_THEME_COLOR;
 
-    // Sync with client-side cookie if it changes elsewhere
-    React.useEffect(() => {
-        const color = Cookies.get(ColorKey)
-        if (color && color !== themeColor) {
-            setThemeColor(color)
-        }
-    }, [])
+  // No-op function for compatibility (does nothing since color is fixed)
+  const setThemeColor = () => {
+    // Color is fixed, cannot be changed
+  };
 
-    const setThemeColorAndPersist = (color: string) => {
-        setThemeColor(color)
-        Cookies.set(ColorKey, color, {
-            expires: 365,
-            sameSite: 'Lax', // Recommended for SSR
-            path: '/', // Make available across entire site
-        })
-    }
+  const value = {
+    themeColor,
+    setThemeColor,
+    themeColorCss: generateThemeCSS(themeColor),
+  };
 
-    const value = {
-        themeColor,
-        setThemeColor: setThemeColorAndPersist,
-        themeColorCss: generateThemeCSS(themeColor),
-    }
-
-    return (
-        <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
-    )
+  return (
+    <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
+  );
 }
 
 export function useThemeColor() {
-    const context = React.useContext(ThemeContext)
+  const context = React.useContext(ThemeContext);
 
-    if (context === undefined) {
-        throw new Error(
-            'useThemeColor must be used within a ColorThemeProvider'
-        )
-    }
+  if (context === undefined) {
+    throw new Error("useThemeColor must be used within a ColorThemeProvider");
+  }
 
-    return context
+  return context;
 }

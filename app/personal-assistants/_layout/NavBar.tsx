@@ -2,7 +2,6 @@
 import React from "react";
 import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ThemeMenu } from "@/components/ThemeMenu";
 import Profile from "@/components/Profile";
 import { useSelectedAgentGroup } from "@/providers/agent-groups-provider";
 import { useThemeColor } from "@/providers/color-theme-provider";
@@ -22,7 +21,6 @@ const NavBar = ({ toggleSidebar }: Props) => {
   }, []);
 
   return (
-    // TODO: use theme color
     <div
       className="flex h-16 items-center justify-between px-6"
       style={
@@ -44,7 +42,6 @@ const NavBar = ({ toggleSidebar }: Props) => {
         </Button>
         <span
           className="font-medium text-white text-shadow-2xs text-shadow-black"
-          // className={`font-medium text-white text-shadow-2xs text-shadow-[${themeColor}]`}
         >
           {selectedAgentGroup
             ? `${selectedAgentGroup.name} Group`
@@ -52,7 +49,6 @@ const NavBar = ({ toggleSidebar }: Props) => {
         </span>
       </div>
       <div className="flex items-center gap-3">
-        <ThemeMenu />
         {session?.user && <Profile />}
       </div>
     </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { Users, ChevronDown, Settings } from "lucide-react";
+import { Users, ChevronDown } from "lucide-react";
 import { default as MessageComponent } from "@/components/chat/Message";
 import MessageInput from "@/components/chat/MessageInput";
 import MessageLoading from "@/components/chat/MessageLoading";
@@ -38,6 +38,7 @@ const ChatInterface: React.FC<Props> = ({ handleNavClick }) => {
   const [message, setMessage] = useState<string>("");
   const [isError, setIsError] = useState<boolean>(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
+  const [isWaitingForStream, setIsWaitingForStream] = useState<boolean>(false);
 
   const selectedGroupId = selectedAgentGroup?.group_id || null;
 
@@ -72,13 +73,16 @@ const ChatInterface: React.FC<Props> = ({ handleNavClick }) => {
     }
 
     abortControllerRef.current = new AbortController();
+    setIsWaitingForStream(true);
 
     try {
       if (!selectedGroupId) {
+        setIsWaitingForStream(false);
         throw Error("No agent group selected. Please select an agent group.");
       }
 
       if (!messagesState.currentThreadId) {
+        setIsWaitingForStream(false);
         throw Error("No thread ID available. Please start a new conversation.");
       }
 
@@ -131,6 +135,11 @@ const ChatInterface: React.FC<Props> = ({ handleNavClick }) => {
           }
 
           const chunk = decoder.decode(value, { stream: true });
+
+          // Hide loading indicator once we start receiving data
+          if (isWaitingForStream) {
+            setIsWaitingForStream(false);
+          }
 
           // Parse each line that starts with "data: "
           const lines = chunk
@@ -201,6 +210,7 @@ const ChatInterface: React.FC<Props> = ({ handleNavClick }) => {
       addError(errorText);
     } finally {
       setIsError(false);
+      setIsWaitingForStream(false);
       stopStreaming();
     }
   };
@@ -284,19 +294,99 @@ const ChatInterface: React.FC<Props> = ({ handleNavClick }) => {
             </p>
           </div>
         ) : messagesState.messages.length === 0 ? (
-          <div className="flex h-full flex-col items-center justify-center text-center">
+          <div className="flex h-full flex-col items-center justify-center text-center px-4">
             <div
               style={{ backgroundColor: themeColor }}
-              className="mb-4 flex size-16 items-center justify-center rounded-full text-white"
+              className="mb-6 flex size-16 items-center justify-center rounded-full text-white"
             >
               <Users className="size-8" />
             </div>
-            <h3 className="mb-2 text-xl font-medium">
-              Start a conversation with{" "}
-              {agentGroups.find((g) => g.group_id === selectedGroupId)?.name}
-            </h3>
-            <p className="mb-6 text-muted-foreground">
-              Type a message to engage with this multi-agent system
+            <h3 className="mb-6 text-xl font-medium">Start a conversation</h3>
+
+            {/* Agent Group Selector */}
+            {agentGroups.length > 0 && (
+              <div className="w-full max-w-md mb-6">
+                <div className="flex flex-col items-center gap-3">
+                  <span className="text-sm text-muted-foreground whitespace-nowrap font-medium">
+                    Agent Group
+                  </span>
+                  <div className="relative w-full">
+                    <button
+                      onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                      className="w-full flex items-center justify-between p-3 border rounded-lg hover:bg-accent transition-colors"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Users size={16} />
+                        <span className="text-nowrap truncate">
+                          {agentGroups.find(
+                            (g) => g.group_id === selectedGroupId
+                          )?.name || "Select Agent Group"}
+                        </span>
+                      </div>
+                      <ChevronDown
+                        size={16}
+                        className={`transition-transform ${
+                          isDropdownOpen ? "rotate-180" : ""
+                        }`}
+                      />
+                    </button>
+
+                    {isDropdownOpen && (
+                      <>
+                        <div
+                          className="fixed inset-0 z-10"
+                          onClick={() => setIsDropdownOpen(false)}
+                        />
+                        <div className="absolute top-full left-0 right-0 bg-popover border rounded-lg shadow-lg z-20 mt-1 max-h-64 overflow-y-auto">
+                          {agentGroups.map((group) => (
+                            <button
+                              key={group.group_id}
+                              onClick={() => {
+                                selectAgentGroup(group);
+                                setIsDropdownOpen(false);
+                              }}
+                              className={cn(
+                                "w-full p-3 text-left hover:bg-accent transition-colors border-b last:border-b-0",
+                                selectedGroupId === group.group_id &&
+                                  "bg-accent"
+                              )}
+                            >
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <div className="font-medium">
+                                    {group.name}
+                                  </div>
+                                  <div className="text-sm text-muted-foreground truncate">
+                                    {group.description}
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Badge
+                                    variant="secondary"
+                                    className="text-xs"
+                                  >
+                                    {group.num_agents} agents
+                                  </Badge>
+                                  <Badge
+                                    variant="secondary"
+                                    className="text-xs"
+                                  >
+                                    {group.architecture}
+                                  </Badge>
+                                </div>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <p className="text-sm text-muted-foreground">
+              Type a message below to engage with the multi-agent system
             </p>
           </div>
         ) : (
@@ -322,88 +412,28 @@ const ChatInterface: React.FC<Props> = ({ handleNavClick }) => {
               </div>
             ))}
 
+            {/* Loading indicator while waiting for stream to start */}
+            {isWaitingForStream && (
+              <div className="mb-4 flex items-start gap-3 animate-in fade-in duration-300">
+                <div className="flex size-8 items-center justify-center rounded-full bg-primary/10">
+                  <MessageLoading size="size-2" />
+                </div>
+                <div className="flex-1 mt-1">
+                  <div className="text-sm text-muted-foreground flex items-center gap-2">
+                    <span>Connecting to agents...</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div ref={messagesEndRef} />
           </div>
         )}
       </div>
 
       {/* Input Area */}
-      <div className="border-t p-3 sm:p-4 md:p-5 bg-card">
+      <div className="p-3 sm:p-4 md:p-5">
         <div className="mx-auto max-w-4xl">
-          {/* Agent Group Selector */}
-          {agentGroups.length > 0 && (
-            <div className="mb-3 sm:mb-4">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mb-2">
-                <span className="text-sm text-muted-foreground whitespace-nowrap">
-                  Agent Group:
-                </span>
-                <div className="relative flex-1 sm:max-w-md">
-                  <button
-                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                    className="w-full flex items-center justify-between p-3 border rounded-lg hover:bg-accent transition-colors"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Users size={16} />
-                      <span className="text-nowrap truncate">
-                        {agentGroups.find((g) => g.group_id === selectedGroupId)
-                          ?.name || "Select Agent Group"}
-                      </span>
-                    </div>
-                    <ChevronDown
-                      size={16}
-                      className={`transition-transform ${
-                        isDropdownOpen ? "rotate-180" : ""
-                      }`}
-                    />
-                  </button>
-
-                  {isDropdownOpen && (
-                    <div className="absolute bottom-full left-0 right-0 bg-popover border rounded-lg shadow-lg z-10 mb-1 max-h-64 overflow-y-auto">
-                      {agentGroups.map((group) => (
-                        <button
-                          key={group.group_id}
-                          onClick={() => {
-                            selectAgentGroup(group);
-                            setIsDropdownOpen(false);
-                          }}
-                          className={cn(
-                            "w-full p-3 text-left hover:bg-accent transition-colors border-b last:border-b-0",
-                            selectedGroupId === group.group_id && "bg-accent"
-                          )}
-                        >
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <div className="font-medium">{group.name}</div>
-                              <div className="text-sm text-muted-foreground truncate">
-                                {group.description}
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Badge variant="secondary" className="text-xs">
-                                {group.num_agents} agents
-                              </Badge>
-                              <Badge variant="secondary" className="text-xs">
-                                {group.architecture}
-                              </Badge>
-                            </div>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => handleNavClick("agent-configuration")}
-                  className="size-12 sm:size-13"
-                >
-                  <Settings className="size-4 lg:size-5" />
-                </Button>
-              </div>
-            </div>
-          )}
-
           {/* Message Input */}
           <MessageInput
             message={message}
