@@ -1,28 +1,23 @@
 import { Button } from '@/components/ui/button'
 import { ThemedTextarea as Textarea } from '@/components/ui/textarea'
-import { Badge } from '@/components/ui/badge'
-import { Mic, MicOff, Send } from 'lucide-react'
+import { Send } from 'lucide-react'
 import React, { useRef, useEffect } from 'react'
 import { cn } from '@/utils/cn'
 
 type Props = {
     message: string
-    isRecording: boolean
     disabled: boolean
     handleSendMessage: () => void
     handleKeyPress: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void
-    toggleListening: () => void
     setMessage: React.Dispatch<React.SetStateAction<string>>
 }
 
 const MessageInput = ({
     disabled,
     message,
-    isRecording,
     handleKeyPress,
     setMessage,
     handleSendMessage,
-    toggleListening,
 }: Props) => {
     const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -52,7 +47,7 @@ const MessageInput = ({
                         ref={textareaRef}
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
-                        onKeyPress={handleKeyPress}
+                        onKeyDown={handleKeyPress}
                         placeholder="Type your message..."
                         className={cn(
                             'min-h-[52px] max-h-[120px] resize-none transition-all duration-200',
@@ -65,25 +60,8 @@ const MessageInput = ({
                 </div>
 
                 <Button
-                    onClick={toggleListening}
-                    variant="outline"
-                    size="icon"
-                    className={cn(
-                        'size-12 sm:size-13 transition-all duration-200',
-                        isRecording &&
-                            'animate-pulse bg-destructive hover:bg-destructive/90 text-destructive-foreground border-destructive'
-                    )}
-                >
-                    {isRecording ? (
-                        <MicOff className="size-4 lg:size-5" />
-                    ) : (
-                        <Mic className="size-4 lg:size-5" />
-                    )}
-                </Button>
-
-                <Button
                     onClick={handleSendMessage}
-                    disabled={!message.trim()}
+                    disabled={!message.trim() || disabled}
                     size="icon"
                     variant={'outline'}
                     className="size-12 sm:size-13 transition-all duration-200"
@@ -91,16 +69,6 @@ const MessageInput = ({
                     <Send className="size-4 lg:size-5" />
                 </Button>
             </div>
-
-            {isRecording && (
-                <Badge
-                    variant="destructive"
-                    className="absolute -top-24 left-4 animate-pulse"
-                >
-                    <div className="mr-2 size-2 rounded-full bg-current animate-ping" />
-                    Recording...
-                </Badge>
-            )}
         </div>
     )
 }

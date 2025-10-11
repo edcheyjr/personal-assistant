@@ -62,6 +62,7 @@ import {
   AgentConfiguration,
 } from "@/types/agent-group";
 import AdvancedCoordinationSettings from "./AdvancedCoordinationSettings";
+import SpecialSelectionInput from "@/components/inputs/SpecialSelectionInput";
 
 interface AgentStructure {
   name: string;
@@ -435,16 +436,6 @@ const AgentCard: React.FC<AgentCardProps> = ({
     );
   };
 
-  // Handle trait toggle
-  const handleTraitToggle = (trait: string) => {
-    setModalPersonality((prev) => ({
-      ...prev,
-      traits: prev.traits.includes(trait)
-        ? prev.traits.filter((t) => t !== trait)
-        : [...prev.traits, trait],
-    }));
-  };
-
   // Handle slider change
   const handleSliderChange = (
     key: keyof typeof modalPersonality.sliders,
@@ -554,7 +545,7 @@ const AgentCard: React.FC<AgentCardProps> = ({
     <div className="border rounded-lg p-4 bg-card">
       <div className="space-y-4">
         {/* Agent Name and Tier with Edit and Delete Buttons */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Edit and Delete buttons - positioned in the grid to avoid overlap */}
           <div className="col-span-2 flex justify-end gap-2 -mt-2 -mr-2 mb-0">
             {/* Edit button */}
@@ -916,7 +907,7 @@ const AgentCard: React.FC<AgentCardProps> = ({
       {/* Edit Modal */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
         <DialogContent
-          className="sm:max-w-5xl max-h-[85vh]"
+          className="w-[95vw] sm:max-w-5xl max-h-[85vh] flex flex-col"
           style={{
             ...themeColorCss,
             '--icon-color': themeColor,
@@ -929,7 +920,7 @@ const AgentCard: React.FC<AgentCardProps> = ({
             </DialogDescription>
           </DialogHeader>
 
-          <ScrollArea className="max-h-[calc(85vh-140px)] pr-4">
+          <ScrollArea className="flex-1 pr-4 overflow-y-auto">
             <div className="space-y-6 py-4">
             {/* Personality Traits Section */}
             <div className="space-y-4">
@@ -937,31 +928,26 @@ const AgentCard: React.FC<AgentCardProps> = ({
                 <Brain className="w-5 h-5" style={{ color: 'var(--icon-color)' }} />
                 <h3 className="text-lg font-semibold">Personality Traits</h3>
               </div>
-              <div className="flex flex-wrap gap-2">
-                {availableTraits.map((trait) => {
-                  const isSelected = modalPersonality.traits.includes(trait);
-                  return (
-                    <Badge
-                      key={trait}
-                      variant={isSelected ? "default" : "outline"}
-                      className={`cursor-pointer transition-all ${
-                        isSelected
-                          ? "bg-primary text-primary-foreground"
-                          : "hover:bg-secondary"
-                      }`}
-                      onClick={() => handleTraitToggle(trait)}
-                    >
-                      {trait}
-                    </Badge>
-                  );
-                })}
-              </div>
+              <SpecialSelectionInput
+                values={modalPersonality.traits}
+                options={availableTraits}
+                type="text"
+                name="personality-traits"
+                placeholder="Select or add personality traits..."
+                inputHelp="Choose personality traits that define this agent's behavior"
+                onChange={(updatedTraits) => {
+                  setModalPersonality((prev) => ({
+                    ...prev,
+                    traits: updatedTraits,
+                  }));
+                }}
+              />
             </div>
 
             {/* Personality Sliders Section */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Personality Values</h3>
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {(
                   Object.keys(modalPersonality.sliders) as Array<
                     keyof typeof modalPersonality.sliders
@@ -1062,7 +1048,7 @@ const AgentCard: React.FC<AgentCardProps> = ({
           </ScrollArea>
 
           {/* Modal Actions */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t">
+          <div className="flex items-center justify-end gap-3 pt-4 border-t flex-shrink-0">
             <Button variant="outline" onClick={handleModalCancel}>
               Cancel
             </Button>
@@ -1477,9 +1463,9 @@ const MultiAgentCreation: React.FC<{
     : Settings;
 
   return (
-    <div className="flex h-[90vh]">
+    <div className="flex flex-col lg:flex-row min-h-screen lg:h-[90vh]">
       {/* Main Content */}
-      <div className="flex-1 overflow-y-auto p-8">
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
         <div className="max-w-5xl mx-auto space-y-6">
           {/* Header */}
           <div className="flex items-center justify-between">
@@ -1506,7 +1492,7 @@ const MultiAgentCreation: React.FC<{
                   <Brain className="w-4 h-4" />
                   Pedagogical Templates
                 </h3>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {QUICK_START_TEMPLATES.filter(
                     (t) =>
                       t.category === "pedagogical" &&
@@ -1550,7 +1536,7 @@ const MultiAgentCreation: React.FC<{
                   <Briefcase className="w-4 h-4" />
                   Business Templates
                 </h3>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {QUICK_START_TEMPLATES.filter(
                     (t) =>
                       t.category === "business" && t.architecture !== "adaptive"
@@ -1593,7 +1579,7 @@ const MultiAgentCreation: React.FC<{
                   <BookOpen className="w-4 h-4" />
                   Educational Templates
                 </h3>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {QUICK_START_TEMPLATES.filter(
                     (t) =>
                       t.category === "educational" &&
@@ -1660,7 +1646,7 @@ const MultiAgentCreation: React.FC<{
               </div>
             </div>
 
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
               {Object.entries(architectureConfigs)
                 .filter(([key]) => key !== "adaptive")
                 .map(([key, config]) => {

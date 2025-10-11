@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { Headphones, Menu } from "lucide-react";
+import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeMenu } from "@/components/ThemeMenu";
 import Profile from "@/components/Profile";
@@ -42,17 +42,13 @@ const NavBar = ({ toggleSidebar }: Props) => {
         >
           <Menu className="size-5" />
         </Button>
-        {/* TODO: Show if reecording */}
-        <div className="p-2 rounded bg-black/10">
-          <Headphones className="size-5" />
-        </div>{" "}
         <span
           className="font-medium text-white text-shadow-2xs text-shadow-black"
           // className={`font-medium text-white text-shadow-2xs text-shadow-[${themeColor}]`}
         >
           {selectedAgentGroup
             ? `${selectedAgentGroup.name} Group`
-            : "AI Voice Assistant"}
+            : "Personal Assistant"}
         </span>
       </div>
       <div className="flex items-center gap-3">
