@@ -3,6 +3,7 @@ import { Slot as SlotPrimitive } from 'radix-ui'
 import { cva, type VariantProps } from 'class-variance-authority'
 
 import { cn } from '@/utils/cn'
+import { useThemeColor } from '@/providers/color-theme-provider'
 
 const badgeVariants = cva(
     'inline-flex items-center justify-center rounded-md border px-2 py-0.5 text-xs font-medium w-fit whitespace-nowrap shrink-0 [&>svg]:size-3 gap-1 [&>svg]:pointer-events-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive transition-[color,box-shadow] overflow-hidden',
@@ -34,15 +35,35 @@ function Badge({
     className,
     variant,
     asChild = false,
+    style,
     ...props
 }: React.ComponentProps<'span'> &
     VariantProps<typeof badgeVariants> & { asChild?: boolean }) {
     const Comp = asChild ? SlotPrimitive.Slot : 'span'
+    const { themeColor, themeColorCss } = useThemeColor()
+
+    // Apply theme color only for default variant
+    const themedStyle =
+        variant === 'default'
+            ? {
+                  backgroundColor: themeColor,
+                  borderColor: themeColor,
+                  color: 'white',
+                  ...style,
+                  ...themeColorCss,
+              }
+            : style
+
+    const themedClassName =
+        variant === 'default'
+            ? cn(badgeVariants({ variant }), 'hover:opacity-90', className)
+            : cn(badgeVariants({ variant }), className)
 
     return (
         <Comp
             data-slot="badge"
-            className={cn(badgeVariants({ variant }), className)}
+            className={themedClassName}
+            style={themedStyle}
             {...props}
         />
     )

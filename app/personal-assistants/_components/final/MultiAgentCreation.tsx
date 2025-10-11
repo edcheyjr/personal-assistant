@@ -21,12 +21,19 @@ import {
   Plus,
   X,
   Edit,
+  Wrench,
+  Database,
+  Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
+import { Slider } from "@/components/ui/slider";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Dialog,
   DialogContent,
@@ -41,11 +48,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getArchitectureConfigs } from "../../_config/architectures.config";
+import { getArchitectureConfigs, getCoordinationConfigs } from "../../_config/architectures.config";
 import { QUICK_START_TEMPLATES } from "../../_config/templates.config";
+import { getSystemPromptForArchitecture } from "../../_config/system-prompts.config";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AgentGroupService } from "@/service/agent-groups";
 import { toast } from "sonner";
+import { useThemeColor } from "@/providers/color-theme-provider";
 import {
   CreateAgentGroupRequest,
   LLMConfiguration,
@@ -61,6 +70,22 @@ interface AgentStructure {
   selectedTiers: string[];
   tier_id?: string;
   sub_agents: number[]; // Array of agent indices (will be converted to nested structure for API)
+  personality?: {
+    traits: string[];
+    sliders: {
+      creativity: number;
+      formality: number;
+      verbosity: number;
+      enthusiasm: number;
+      empathy: number;
+    };
+  };
+  tools?: {
+    retrieve_from_long_term_memory: boolean;
+    update_long_term_memory: boolean;
+    trim_messages: boolean;
+    filter_messages: boolean;
+  };
 }
 
 // State interface
@@ -244,7 +269,63 @@ const formReducer = (state: FormState, action: FormAction): FormState => {
         }
       });
 
-      return { ...state, agents: newAgents };
+      // Auto-assign sub-agents based on architecture pattern
+      const architecture = action.payload.architecture;
+
+      if (architecture === "supervisor") {
+        // Coordinator delegates to all specialists
+        const coordinatorIdx = newAgents.findIndex((a) => a.role === "coordinator");
+        const specialistIndices = newAgents
+          .map((a, idx) => (a.role === "specialist" ? idx : -1))
+          .filter((idx) => idx !== -1);
+
+        if (coordinatorIdx !== -1) {
+          newAgents[coordinatorIdx].sub_agents = specialistIndices;
+        }
+      } else if (architecture === "hierarchical") {
+        // Senior supervisor oversees team leads
+        // Team leads manage specialists (distribute evenly)
+        const supervisorIdx = newAgents.findIndex((a) => a.role === "senior_supervisor");
+        const teamLeadIndices = newAgents
+          .map((a, idx) => (a.role === "team_lead" ? idx : -1))
+          .filter((idx) => idx !== -1);
+        const specialistIndices = newAgents
+          .map((a, idx) => (a.role === "specialist" ? idx : -1))
+          .filter((idx) => idx !== -1);
+
+        if (supervisorIdx !== -1) {
+          newAgents[supervisorIdx].sub_agents = teamLeadIndices;
+        }
+
+        // Distribute specialists evenly among team leads
+        if (teamLeadIndices.length > 0 && specialistIndices.length > 0) {
+          specialistIndices.forEach((specIdx, i) => {
+            const teamLeadIdx = teamLeadIndices[i % teamLeadIndices.length];
+            newAgents[teamLeadIdx].sub_agents.push(specIdx);
+          });
+        }
+      } else if (architecture === "debate") {
+        // Moderator oversees all advocates and critics
+        const moderatorIdx = newAgents.findIndex((a) => a.role === "moderator");
+        const debaterIndices = newAgents
+          .map((a, idx) => (a.role === "advocate" || a.role === "critic" ? idx : -1))
+          .filter((idx) => idx !== -1);
+
+        if (moderatorIdx !== -1) {
+          newAgents[moderatorIdx].sub_agents = debaterIndices;
+        }
+      }
+      // For network, sequential, and adaptive, no auto-assignment needed (flat structures)
+
+      // Auto-populate default coordination settings for the architecture
+      const coordinationConfigs = getCoordinationConfigs();
+      const defaultCoordinationSettings = coordinationConfigs[architecture]?.settings || {};
+
+      return {
+        ...state,
+        agents: newAgents,
+        coordinationSettings: defaultCoordinationSettings
+      };
 
     default:
       return state;
@@ -291,6 +372,53 @@ const AgentCard: React.FC<AgentCardProps> = ({
   const [showSubAgentInput, setShowSubAgentInput] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
+  // Get theme color for modal
+  const { themeColor, themeColorCss } = useThemeColor();
+
+  // Modal state for personality and tools
+  const [modalPersonality, setModalPersonality] = useState<{
+    traits: string[];
+    sliders: {
+      creativity: number;
+      formality: number;
+      verbosity: number;
+      enthusiasm: number;
+      empathy: number;
+    };
+  }>({
+    traits: agent.personality?.traits || ["professional", "helpful"],
+    sliders: agent.personality?.sliders || {
+      creativity: 50,
+      formality: 70,
+      verbosity: 50,
+      enthusiasm: 50,
+      empathy: 70,
+    },
+  });
+
+  const [modalTools, setModalTools] = useState({
+    retrieve_from_long_term_memory: agent.tools?.retrieve_from_long_term_memory ?? false,
+    update_long_term_memory: agent.tools?.update_long_term_memory ?? false,
+    trim_messages: agent.tools?.trim_messages ?? false,
+    filter_messages: agent.tools?.filter_messages ?? false,
+  });
+
+  // Available personality traits
+  const availableTraits = [
+    "professional",
+    "helpful",
+    "friendly",
+    "formal",
+    "casual",
+    "analytical",
+    "creative",
+    "empathetic",
+    "assertive",
+    "patient",
+    "enthusiastic",
+    "thorough",
+  ];
+
   const handleAddSubAgent = () => {
     const subAgentIdx = parseInt(selectedSubAgentIndex);
     if (!isNaN(subAgentIdx) && !agent.sub_agents.includes(subAgentIdx)) {
@@ -305,6 +433,67 @@ const AgentCard: React.FC<AgentCardProps> = ({
       "sub_agents",
       agent.sub_agents.filter((idx) => idx !== subAgentIdx)
     );
+  };
+
+  // Handle trait toggle
+  const handleTraitToggle = (trait: string) => {
+    setModalPersonality((prev) => ({
+      ...prev,
+      traits: prev.traits.includes(trait)
+        ? prev.traits.filter((t) => t !== trait)
+        : [...prev.traits, trait],
+    }));
+  };
+
+  // Handle slider change
+  const handleSliderChange = (
+    key: keyof typeof modalPersonality.sliders,
+    value: number[]
+  ) => {
+    setModalPersonality((prev) => ({
+      ...prev,
+      sliders: {
+        ...prev.sliders,
+        [key]: value[0],
+      },
+    }));
+  };
+
+  // Handle tool toggle
+  const handleToolToggle = (tool: keyof typeof modalTools) => {
+    setModalTools((prev) => ({
+      ...prev,
+      [tool]: !prev[tool],
+    }));
+  };
+
+  // Handle modal save
+  const handleModalSave = () => {
+    onUpdate("personality", modalPersonality);
+    onUpdate("tools", modalTools);
+    setIsEditModalOpen(false);
+  };
+
+  // Handle modal cancel
+  const handleModalCancel = () => {
+    // Reset to current agent values
+    setModalPersonality({
+      traits: agent.personality?.traits || ["professional", "helpful"],
+      sliders: agent.personality?.sliders || {
+        creativity: 50,
+        formality: 70,
+        verbosity: 50,
+        enthusiasm: 50,
+        empathy: 70,
+      },
+    });
+    setModalTools({
+      retrieve_from_long_term_memory: agent.tools?.retrieve_from_long_term_memory ?? false,
+      update_long_term_memory: agent.tools?.update_long_term_memory ?? false,
+      trim_messages: agent.tools?.trim_messages ?? false,
+      filter_messages: agent.tools?.filter_messages ?? false,
+    });
+    setIsEditModalOpen(false);
   };
 
   // For specialist agents: find which team agent they belong to
@@ -590,6 +779,37 @@ const AgentCard: React.FC<AgentCardProps> = ({
                 This agent automatically reports to the Moderator in the debate.
               </div>
             </div>
+          ) : agent.role === "coordinator" ? (
+            // For coordinator agents in supervisor architecture, show assigned specialists (read-only like supervisor)
+            <div>
+              <Label className="text-xs mb-2 block font-semibold">
+                Assigned Specialists
+              </Label>
+              {agent.sub_agents.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {agent.sub_agents.map((subAgentIdx, idx) => {
+                    const subAgent = allAgents[subAgentIdx];
+                    return (
+                      <div
+                        key={idx}
+                        className="flex items-center gap-1 px-2 py-1 bg-secondary rounded-md text-xs"
+                      >
+                        <span>
+                          {subAgent?.name || `Agent ${subAgentIdx + 1}`}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-xs text-muted-foreground italic">
+                  No specialists assigned yet.
+                </div>
+              )}
+            </div>
+          ) : agent.role === "standalone" ? (
+            // For standalone agents (None architecture), no sub-agents section needed
+            null
           ) : (
             // For other agents, show the sub-agents management UI
             <>
@@ -695,17 +915,161 @@ const AgentCard: React.FC<AgentCardProps> = ({
 
       {/* Edit Modal */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent
+          className="sm:max-w-5xl max-h-[85vh]"
+          style={{
+            ...themeColorCss,
+            '--icon-color': themeColor,
+          } as React.CSSProperties}
+        >
           <DialogHeader>
             <DialogTitle>Edit Agent: {agent.name}</DialogTitle>
             <DialogDescription>
-              Configure advanced settings for this agent.
+              Configure personality, tools, and capabilities for this agent.
             </DialogDescription>
           </DialogHeader>
-          <div className="py-6">
-            <p className="text-center text-muted-foreground">
-              Add the edit options here
-            </p>
+
+          <ScrollArea className="max-h-[calc(85vh-140px)] pr-4">
+            <div className="space-y-6 py-4">
+            {/* Personality Traits Section */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Brain className="w-5 h-5" style={{ color: 'var(--icon-color)' }} />
+                <h3 className="text-lg font-semibold">Personality Traits</h3>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {availableTraits.map((trait) => {
+                  const isSelected = modalPersonality.traits.includes(trait);
+                  return (
+                    <Badge
+                      key={trait}
+                      variant={isSelected ? "default" : "outline"}
+                      className={`cursor-pointer transition-all ${
+                        isSelected
+                          ? "bg-primary text-primary-foreground"
+                          : "hover:bg-secondary"
+                      }`}
+                      onClick={() => handleTraitToggle(trait)}
+                    >
+                      {trait}
+                    </Badge>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Personality Sliders Section */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Personality Values</h3>
+              <div className="grid grid-cols-2 gap-6">
+                {(
+                  Object.keys(modalPersonality.sliders) as Array<
+                    keyof typeof modalPersonality.sliders
+                  >
+                ).map((key) => (
+                  <div key={key} className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label className="capitalize">{key}</Label>
+                      <span className="text-sm text-muted-foreground">
+                        {modalPersonality.sliders[key]}
+                      </span>
+                    </div>
+                    <Slider
+                      value={[modalPersonality.sliders[key]]}
+                      onValueChange={(value) => handleSliderChange(key, value)}
+                      min={0}
+                      max={100}
+                      step={5}
+                      className="w-full"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Tools Section */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Wrench className="w-5 h-5" style={{ color: 'var(--icon-color)' }} />
+                <h3 className="text-lg font-semibold">Available Tools</h3>
+              </div>
+              <div className="space-y-3 border rounded-lg p-4 bg-card">
+                {(
+                  Object.keys(modalTools) as Array<keyof typeof modalTools>
+                ).map((tool) => (
+                  <div
+                    key={tool}
+                    className="flex items-center justify-between py-2"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10"
+                      >
+                        {tool.includes("memory") ? (
+                          <Database className="w-4 h-4" style={{ color: 'var(--icon-color)' }} />
+                        ) : (
+                          <Clock className="w-4 h-4" style={{ color: 'var(--icon-color)' }} />
+                        )}
+                      </div>
+                      <div>
+                        <Label className="font-medium cursor-pointer">
+                          {tool
+                            .split("_")
+                            .map(
+                              (word) =>
+                                word.charAt(0).toUpperCase() + word.slice(1)
+                            )
+                            .join(" ")}
+                        </Label>
+                        <p className="text-xs text-muted-foreground">
+                          {tool === "retrieve_from_long_term_memory"
+                            ? "Access stored memories and context"
+                            : tool === "update_long_term_memory"
+                            ? "Save information for future reference"
+                            : tool === "trim_messages"
+                            ? "Automatically manage conversation length"
+                            : "Remove irrelevant messages from history"}
+                        </p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={modalTools[tool]}
+                      onCheckedChange={() => handleToolToggle(tool)}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Knowledge Bases Section */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <BookOpen className="w-5 h-5" style={{ color: 'var(--icon-color)' }} />
+                <h3 className="text-lg font-semibold">Knowledge Bases</h3>
+              </div>
+              <div className="border rounded-lg p-6 bg-muted/50 text-center">
+                <Database className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground mb-1">
+                  Knowledge Base Integration
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Coming soon! Connect custom knowledge bases to enhance agent
+                  capabilities.
+                </p>
+              </div>
+            </div>
+            </div>
+          </ScrollArea>
+
+          {/* Modal Actions */}
+          <div className="flex items-center justify-end gap-3 pt-4 border-t">
+            <Button variant="outline" onClick={handleModalCancel}>
+              Cancel
+            </Button>
+            <Button onClick={handleModalSave} className="gap-2">
+              <Save className="w-4 h-4" />
+              Save Changes
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -841,8 +1205,8 @@ const MermaidDiagram: React.FC<MermaidDiagramProps> = ({
         setDiagram(mermaidDiagram);
 
         if (mermaidRef.current && mermaidDiagram) {
-          const mermaid = (await import("mermaid")).default;
-          mermaid.initialize({
+          const mermaid = await import("mermaid");
+          mermaid.default.initialize({
             startOnLoad: true,
             theme: "dark",
             themeVariables: {
@@ -858,7 +1222,7 @@ const MermaidDiagram: React.FC<MermaidDiagramProps> = ({
           });
 
           mermaidRef.current.innerHTML = mermaidDiagram;
-          await mermaid.run({
+          await mermaid.default.run({
             nodes: [mermaidRef.current],
           });
           setIsLoading(false);
@@ -1011,7 +1375,7 @@ const MultiAgentCreation: React.FC<{
         } architecture`,
         architecture: state.selectedArchitecture,
         prompt_configurations: {
-          system_prompt: "",
+          system_prompt: getSystemPromptForArchitecture(state.selectedArchitecture),
         },
         advanced_coordination_settings: state.coordinationSettings || {},
       },
@@ -1021,7 +1385,7 @@ const MultiAgentCreation: React.FC<{
         llm_configuration_index: 0,
         name: agent.name,
         role: agent.role,
-        personality: {
+        personality: agent.personality || {
           traits: ["professional", "helpful"],
           sliders: {
             creativity: 50,
@@ -1032,44 +1396,67 @@ const MultiAgentCreation: React.FC<{
           },
         },
         prompt_configurations: { user_prompt: "" },
-        capabilities: { tools: [], knowledge_bases: [] },
+        capabilities: {
+          tools: agent.tools
+            ? Object.entries(agent.tools)
+                .filter(([_, enabled]) => enabled)
+                .map(([tool]) => tool)
+            : [],
+          knowledge_bases: [],
+        },
       })),
       orchestration_configurations: {
-        agents_configurations: state.agents.map((agent, index) => {
-          // Build nested sub-agent configurations recursively with cycle detection
-          // The key changes from agents_index -> agents_index_1 -> agents_index_2, etc.
-          const buildSubAgentConfig = (
-            subAgentIndices: number[],
-            visited: Set<number> = new Set(),
-            level: number = 0
-          ): AgentConfiguration[] => {
-            return subAgentIndices
-              .filter((subIdx) => !visited.has(subIdx)) // Prevent cycles
-              .map((subIdx) => {
-                const newVisited = new Set(visited);
-                newVisited.add(subIdx);
-                const indexKey =
-                  level === 0 ? "agents_index" : `agents_index_${level}`;
-                return {
-                  [indexKey]: subIdx,
-                  sub_agents: buildSubAgentConfig(
-                    state.agents[subIdx]?.sub_agents || [],
-                    newVisited,
-                    level + 1
-                  ),
-                } as AgentConfiguration;
-              });
-          };
+        agents_configurations: (() => {
+          const architecture = state.selectedArchitecture;
 
-          return {
+          // For hierarchical architectures (supervisor, hierarchical, debate):
+          // Backend needs nested structure with sub_agents relationships
+          if (architecture === "supervisor" || architecture === "hierarchical" || architecture === "debate") {
+            const buildSubAgentConfig = (
+              subAgentIndices: number[],
+              visited: Set<number> = new Set()
+            ): AgentConfiguration[] => {
+              return subAgentIndices
+                .filter((subIdx) => !visited.has(subIdx))
+                .map((subIdx) => {
+                  const newVisited = new Set(visited);
+                  newVisited.add(subIdx);
+                  return {
+                    agents_index: subIdx,
+                    sub_agents: buildSubAgentConfig(
+                      state.agents[subIdx]?.sub_agents || [],
+                      newVisited
+                    ),
+                  } as AgentConfiguration;
+                });
+            };
+
+            // Find all agents that are sub-agents of someone else
+            const allSubAgentIndices = new Set<number>();
+            state.agents.forEach((agent) => {
+              agent.sub_agents?.forEach((subIdx) => allSubAgentIndices.add(subIdx));
+            });
+
+            // Only include ROOT agents with their nested sub_agents
+            return state.agents
+              .map((agent, index) => ({ agent, index }))
+              .filter(({ index }) => !allSubAgentIndices.has(index))
+              .map(({ index }) => ({
+                agents_index: index,
+                sub_agents: buildSubAgentConfig(
+                  state.agents[index]?.sub_agents || [],
+                  new Set([index])
+                ),
+              }));
+          }
+
+          // For flat architectures (network, sequential, adaptive, none):
+          // Backend needs all agents at root with empty sub_agents
+          return state.agents.map((agent, index) => ({
             agents_index: index,
-            sub_agents: buildSubAgentConfig(
-              agent.sub_agents || [],
-              new Set([index]),
-              1
-            ),
-          };
-        }),
+            sub_agents: [],
+          }));
+        })(),
       },
     };
 
