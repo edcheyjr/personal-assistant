@@ -350,9 +350,9 @@ const AgentConfiguration: React.FC<{ selectedGroupId?: string | null; onDeleteGr
   }, [state.selectedGroupId, state.systemPrompt, state.userPrompt, state.selectedTierId, state.selectedAgent?.name, agentGroupDetails, queryClient]);
 
   return (
-    <div className="flex h-[90vh]">
+    <div className="flex flex-col lg:flex-row min-h-screen lg:h-[90vh]">
       {/* Main Content */}
-      <div className="flex-1 overflow-y-auto p-8">
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
         <div className="max-w-5xl mx-auto space-y-6">
           {/* Agent Group Selection */}
           <div>
@@ -661,7 +661,7 @@ const AgentConfiguration: React.FC<{ selectedGroupId?: string | null; onDeleteGr
                 <div className="space-y-6">
                   <h3 className="font-semibold">Advanced Settings</h3>
 
-                  <div className="grid grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <Label className="mb-2 block">Language Model</Label>
                       <Select

@@ -1,6 +1,7 @@
 import React from 'react'
 import { X } from 'lucide-react'
 import { cn } from '@/utils/cn'
+import { useThemeColor } from '@/providers/color-theme-provider'
 
 interface Props<T> {
     value: T
@@ -13,12 +14,18 @@ function InputChip<T extends React.ReactNode>({
     className,
     handleRemoveItem,
 }: Props<T>) {
+    const { themeColor } = useThemeColor()
+
     return (
         <div
             className={cn(
-                `flex h-8 w-fit items-center space-x-1.5 truncate text-nowrap rounded-md bg-gray-950/10 py-0.5  pl-2.5 pr-1.5 text-center text-xs font-medium text-purple-700 dark:bg-gray-50/10 dark:text-purple-300 lg:text-sm`,
+                `flex h-8 w-fit items-center space-x-1.5 truncate text-nowrap rounded-md py-0.5  pl-2.5 pr-1.5 text-center text-xs font-medium lg:text-sm`,
                 className
             )}
+            style={{
+                backgroundColor: `${themeColor}20`,
+                color: themeColor,
+            }}
         >
             <p>{value}</p>
             <button

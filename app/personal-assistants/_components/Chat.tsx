@@ -14,13 +14,15 @@ import { useQuery } from "@tanstack/react-query";
 import { AgentGroupService } from "@/service/agent-groups";
 import { cn } from "@/utils/cn";
 import { Badge } from "@/components/ui/badge";
+import { useAgentGroupSelection } from "@/providers/agent-groups-provider";
 
 type Props = {
   handleNavClick: (view: ViewType) => void;
 };
 
-const VoiceAICustomerInterface: React.FC<Props> = ({ handleNavClick }) => {
+const ChatInterface: React.FC<Props> = ({ handleNavClick }) => {
   const { themeColor } = useThemeColor();
+  const { selectedAgentGroup, selectAgentGroup } = useAgentGroupSelection();
   const {
     state: messagesState,
     abortControllerRef,
@@ -35,10 +37,9 @@ const VoiceAICustomerInterface: React.FC<Props> = ({ handleNavClick }) => {
 
   const [message, setMessage] = useState<string>("");
   const [isError, setIsError] = useState<boolean>(false);
-  const [isListening, setIsListening] = useState<boolean>(false);
-  const [isRecording, setIsRecording] = useState<boolean>(false);
-  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
+
+  const selectedGroupId = selectedAgentGroup?.group_id || null;
 
   // Fetch agent groups
   const { data: agentGroupsResponse, isLoading: groupsLoading } = useQuery({
@@ -51,9 +52,9 @@ const VoiceAICustomerInterface: React.FC<Props> = ({ handleNavClick }) => {
   // Auto-select first group if none selected
   useEffect(() => {
     if (agentGroups.length > 0 && !selectedGroupId) {
-      setSelectedGroupId(agentGroups[0].group_id);
+      selectAgentGroup(agentGroups[0]);
     }
-  }, [agentGroups, selectedGroupId]);
+  }, [agentGroups, selectedGroupId, selectAgentGroup]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -223,18 +224,6 @@ const VoiceAICustomerInterface: React.FC<Props> = ({ handleNavClick }) => {
     }
   };
 
-  const toggleListening = (): void => {
-    setIsListening(!isListening);
-    setIsRecording(!isRecording);
-  };
-
-  // Auto-select first group if available
-  useEffect(() => {
-    if (agentGroups.length > 0 && !selectedGroupId) {
-      setSelectedGroupId(agentGroups[0].group_id);
-    }
-  }, [agentGroups, selectedGroupId]);
-
   useEffect(() => {
     return () => {
       if (abortControllerRef.current) {
@@ -244,9 +233,9 @@ const VoiceAICustomerInterface: React.FC<Props> = ({ handleNavClick }) => {
   }, []);
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden max-h-[92vh] min-[2048px]:max-h-[95vh]">
+    <div className="flex flex-1 flex-col overflow-hidden max-h-screen md:max-h-[92vh] min-[2048px]:max-h-[95vh]">
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-6 h-full">
+      <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 h-full">
         {groupsLoading ? (
           <div className="flex h-full flex-col items-center justify-center text-center">
             <div className="mb-4 flex size-16 items-center justify-center rounded-full bg-secondary animate-pulse">
@@ -273,7 +262,7 @@ const VoiceAICustomerInterface: React.FC<Props> = ({ handleNavClick }) => {
               variant="default"
               style={{ backgroundColor: themeColor }}
               onClick={() => {
-                handleNavClick("agent-groups");
+                handleNavClick("multi-agent-creation");
               }}
             >
               Create Agent Group
@@ -339,16 +328,16 @@ const VoiceAICustomerInterface: React.FC<Props> = ({ handleNavClick }) => {
       </div>
 
       {/* Input Area */}
-      <div className="border-t p-5 bg-card">
+      <div className="border-t p-3 sm:p-4 md:p-5 bg-card">
         <div className="mx-auto max-w-4xl">
           {/* Agent Group Selector */}
           {agentGroups.length > 0 && (
-            <div className="mb-4">
-              <div className="flex items-center gap-4 mb-2">
+            <div className="mb-3 sm:mb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mb-2">
                 <span className="text-sm text-muted-foreground whitespace-nowrap">
                   Agent Group:
                 </span>
-                <div className="relative flex-1 max-w-md">
+                <div className="relative flex-1 sm:max-w-md">
                   <button
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                     className="w-full flex items-center justify-between p-3 border rounded-lg hover:bg-accent transition-colors"
@@ -374,7 +363,7 @@ const VoiceAICustomerInterface: React.FC<Props> = ({ handleNavClick }) => {
                         <button
                           key={group.group_id}
                           onClick={() => {
-                            setSelectedGroupId(group.group_id);
+                            selectAgentGroup(group);
                             setIsDropdownOpen(false);
                           }}
                           className={cn(
@@ -418,11 +407,9 @@ const VoiceAICustomerInterface: React.FC<Props> = ({ handleNavClick }) => {
           {/* Message Input */}
           <MessageInput
             message={message}
-            isRecording={isRecording}
             setMessage={setMessage}
             handleKeyPress={handleKeyPress}
             handleSendMessage={handleSendMessage}
-            toggleListening={toggleListening}
             disabled={messagesState.isStreaming || !selectedGroupId}
           />
 
@@ -442,4 +429,4 @@ const VoiceAICustomerInterface: React.FC<Props> = ({ handleNavClick }) => {
   );
 };
 
-export default VoiceAICustomerInterface;
+export default ChatInterface;

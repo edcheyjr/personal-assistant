@@ -4,6 +4,7 @@ import * as React from 'react'
 import { Slider as SliderPrimitive } from 'radix-ui'
 
 import { cn } from '@/utils/cn'
+import { useThemeColor } from '@/providers/color-theme-provider'
 
 type ExtraProp = {
     trackStyle?: React.CSSProperties
@@ -19,6 +20,8 @@ function Slider({
     thumbStyle,
     ...props
 }: React.ComponentProps<typeof SliderPrimitive.Root> & ExtraProp) {
+    const { themeColor } = useThemeColor()
+
     const _values = React.useMemo(
         () =>
             Array.isArray(value)
@@ -51,17 +54,23 @@ function Slider({
                 <SliderPrimitive.Range
                     data-slot="slider-range"
                     className={cn(
-                        'bg-primary absolute data-[orientation=horizontal]:h-full data-[orientation=vertical]:w-full'
+                        'absolute data-[orientation=horizontal]:h-full data-[orientation=vertical]:w-full'
                     )}
-                    style={trackStyle}
+                    style={{
+                        backgroundColor: themeColor,
+                        ...trackStyle,
+                    }}
                 />
             </SliderPrimitive.Track>
             {Array.from({ length: _values.length }, (_, index) => (
                 <SliderPrimitive.Thumb
                     data-slot="slider-thumb"
                     key={index}
-                    className="border-primary bg-background ring-ring/50 block size-4 shrink-0 rounded-full border shadow-sm transition-[color,box-shadow] hover:ring-4 focus-visible:ring-4 focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-50"
-                    style={thumbStyle}
+                    className="bg-background ring-ring/50 block size-4 shrink-0 rounded-full border shadow-sm transition-[color,box-shadow] hover:ring-4 focus-visible:ring-4 focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-50"
+                    style={{
+                        borderColor: themeColor,
+                        ...thumbStyle,
+                    }}
                 />
             ))}
         </SliderPrimitive.Root>
