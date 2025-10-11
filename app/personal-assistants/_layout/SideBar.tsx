@@ -13,6 +13,8 @@ import {
   Plus,
   Users,
   PlusCircle,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import React, { useState } from "react";
 import { cn } from "@/utils/cn";
@@ -38,6 +40,7 @@ interface NavItemProps {
   loading?: boolean;
   newChat?: boolean;
   currentTheme?: string;
+  isCollapsed?: boolean;
 }
 
 const SideMenuBar = ({
@@ -52,6 +55,7 @@ const SideMenuBar = ({
   const { themeColor } = useThemeColor();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const { agentGroups, isLoading } = useAgentGroupContext();
   const {
     startNewConversation,
@@ -111,6 +115,7 @@ const SideMenuBar = ({
     onClick,
     loading = false,
     newChat,
+    isCollapsed = false,
   }) => (
     <Button
       variant={active ? "default" : "ghost"}
@@ -124,12 +129,14 @@ const SideMenuBar = ({
           : undefined
       }
       className={cn(
-        "w-full justify-start gap-3 h-auto font-medium transition-all",
-        newChat ? "py-2" : "px-4 py-3",
+        "w-full h-auto font-medium transition-all",
+        isCollapsed ? "justify-center p-2" : "justify-start gap-3",
+        newChat ? "py-2" : isCollapsed ? "py-3" : "px-4 py-3",
         active
           ? "bg-primary text-primary-foreground hover:bg-primary/90"
           : "text-muted-foreground hover:text-foreground hover:bg-accent"
       )}
+      title={isCollapsed ? label : undefined}
     >
       {loading ? (
         <LoaderIcon size={18} className="animate-spin" />
@@ -150,7 +157,7 @@ const SideMenuBar = ({
       ) : (
         <Icon size={18} />
       )}
-      <span>{label}</span>
+      {!isCollapsed && <span>{label}</span>}
     </Button>
   );
 
@@ -164,7 +171,8 @@ const SideMenuBar = ({
       )}
       <div
         className={cn(
-          "fixed inset-y-0 left-0 z-30 flex w-64 flex-col bg-card border-r border-border transition-transform duration-300 ease-in-out lg:relative",
+          "fixed inset-y-0 left-0 z-30 flex flex-col bg-card border-r border-border transition-all duration-300 ease-in-out lg:relative",
+          isCollapsed ? "w-20" : "w-64",
           sidebarOpen ? "translate-x-0" : "-translate-x-full",
           "lg:translate-x-0"
         )}
@@ -172,15 +180,35 @@ const SideMenuBar = ({
         {/* Header */}
         <div className="border-b border-border p-3">
           <div className="flex items-center justify-between w-full">
-            <Logo />
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleSidebar}
-              className="h-8 w-8 lg:hidden"
+            {!isCollapsed && <Logo />}
+            <div
+              className={cn(
+                "flex items-center gap-2",
+                isCollapsed && "justify-center w-full"
+              )}
             >
-              <X className="h-4 w-4" />
-            </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleSidebar}
+                className="h-8 w-8 lg:hidden"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsCollapsed(!isCollapsed)}
+                className="hidden lg:flex h-8 w-8"
+                title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+              >
+                {isCollapsed ? (
+                  <ChevronRight className="h-4 w-4" />
+                ) : (
+                  <ChevronLeft className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -195,6 +223,7 @@ const SideMenuBar = ({
             loading={isLoadingNewThread}
             newChat
             currentTheme={currentTheme}
+            isCollapsed={isCollapsed}
           />
 
           {/* Divider */}
@@ -205,64 +234,72 @@ const SideMenuBar = ({
             label="Customer Interface"
             active={currentView === "customer-interface"}
             onClick={() => handleNavClick("customer-interface")}
+            isCollapsed={isCollapsed}
           />
           <NavItem
             icon={PlusCircle}
             label="Multi-Agent Creation"
             active={currentView === "multi-agent-creation"}
             onClick={() => handleNavClick("multi-agent-creation")}
+            isCollapsed={isCollapsed}
           />
           <NavItem
             icon={Settings}
             label="Agent Configuration"
             active={currentView === "agent-configuration"}
             onClick={() => handleNavClick("agent-configuration")}
+            isCollapsed={isCollapsed}
           />
         </nav>
 
         {/* System Status */}
         <div className="border-t border-border p-3.5">
-          <div className="space-y-3 text-sm">
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground">Total Agents</span>
-              <span className="font-medium text-foreground">{totalAgents}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground">Agent Groups</span>
-              <span className="font-medium text-foreground">
-                {agentGroups.length}
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground">Architectures</span>
-              <span className="font-medium text-foreground">
-                {uniqueArchitectures}
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground">System Status</span>
-              <div className="flex items-center gap-2">
-                <div className="h-2 w-2 rounded-full bg-green-500 dark:bg-green-400"></div>
-                <span className="font-medium text-green-600 dark:text-green-400">
-                  Operational
+          {!isCollapsed && (
+            <div className="space-y-3 text-sm mb-4">
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Total Agents</span>
+                <span className="font-medium text-foreground">
+                  {totalAgents}
                 </span>
               </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Agent Groups</span>
+                <span className="font-medium text-foreground">
+                  {agentGroups.length}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Architectures</span>
+                <span className="font-medium text-foreground">
+                  {uniqueArchitectures}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">System Status</span>
+                <div className="flex items-center gap-2">
+                  <div className="h-2 w-2 rounded-full bg-green-500 dark:bg-green-400"></div>
+                  <span className="font-medium text-green-600 dark:text-green-400">
+                    Operational
+                  </span>
+                </div>
+              </div>
             </div>
-          </div>
+          )}
           {/* Logout  */}
           <Button
             variant={"outline"}
-            size={"lg"}
+            size={isCollapsed ? "icon" : "lg"}
             disabled={loading}
             onClick={handleSignOut}
-            className="w-full mt-10 "
+            className={cn("w-full", !isCollapsed && "mt-6")}
+            title={isCollapsed ? "Logout" : undefined}
           >
             {loading ? (
-              <LoaderIcon className="animate-spin size-5 " />
+              <LoaderIcon className="animate-spin size-5" />
             ) : (
               <LogOut className="size-5" />
-            )}{" "}
-            Logout
+            )}
+            {!isCollapsed && " Logout"}
           </Button>
         </div>
       </div>
