@@ -80,14 +80,14 @@ const Message: React.FC<MessageProps> = ({ message, isError }) => {
 
           // System message (info or error)
           message.sender === "system" && [
-            "rounded-lg px-4 py-3 shadow-sm",
+            "rounded-lg px-4 py-3 shadow-md",
             isError
-              ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100"
-              : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100",
-            "border",
+              ? "bg-red-50 text-red-900 dark:bg-red-950/50 dark:text-red-100"
+              : "bg-blue-50 text-blue-900 dark:bg-blue-950/50 dark:text-blue-100",
+            "border-l-4",
             isError
-              ? "border-red-200 dark:border-red-700"
-              : "border-blue-200 dark:border-blue-700",
+              ? "border-l-red-500 dark:border-l-red-400"
+              : "border-l-blue-500 dark:border-l-blue-400",
           ]
         )}
         style={message.sender === "user" ? userMessageStyle : undefined}

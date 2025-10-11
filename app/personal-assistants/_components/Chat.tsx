@@ -20,6 +20,39 @@ type Props = {
   handleNavClick: (view: ViewType) => void;
 };
 
+// Helper function to format error messages for better UX
+const formatErrorMessage = (error: string): string => {
+  // Try to parse as JSON error
+  if (error.includes('{"detail":[')) {
+    try {
+      const errorObj = JSON.parse(error);
+      if (errorObj.detail && Array.isArray(errorObj.detail)) {
+        const messages = errorObj.detail
+          .map((e: any) => e.msg || e.message)
+          .filter(Boolean);
+        if (messages.length > 0) {
+          return messages.join(". ");
+        }
+      }
+    } catch {
+      // Continue with original error
+    }
+  }
+
+  // Remove common JSON error patterns
+  let formatted = error
+    .replace(/\{"detail":\[.*?\]\}/g, "")
+    .replace(/\[object Object\]/g, "")
+    .trim();
+
+  // If error is too generic, make it more helpful
+  if (formatted === "Message" || formatted.length < 3) {
+    return "The agent encountered an issue processing your request. Please try rephrasing your message.";
+  }
+
+  return formatted || "An unexpected error occurred. Please try again.";
+};
+
 const ChatInterface: React.FC<Props> = ({ handleNavClick }) => {
   const { themeColor } = useThemeColor();
   const { selectedAgentGroup, selectAgentGroup } = useAgentGroupSelection();
@@ -30,6 +63,9 @@ const ChatInterface: React.FC<Props> = ({ handleNavClick }) => {
     startStreaming,
     updateStreamingContent,
     addMemoryOperation,
+    addToolCall,
+    addAgentTransfer,
+    setCurrentAgent,
     finishResponse,
     addError,
     stopStreaming,
@@ -159,7 +195,42 @@ const ChatInterface: React.FC<Props> = ({ handleNavClick }) => {
                 continue;
               }
 
-              if (data.type === "content" && data.content) {
+              // Handle error messages from the backend
+              if (data.type === "error" || data.error) {
+                const rawError =
+                  data.message || data.error || "An error occurred";
+                const formattedError = formatErrorMessage(rawError);
+                logger(`Stream error: ${formattedError}`, "Error", "error");
+                addError(formattedError);
+                stopStreaming();
+                return;
+              } else if (data.type === "content" && data.content) {
+                // Check if content looks like an error object
+                if (
+                  data.content.trim().startsWith("{") &&
+                  data.content.includes("detail")
+                ) {
+                  try {
+                    const errorObj = JSON.parse(data.content);
+                    if (errorObj.detail) {
+                      // Extract error message from detail array
+                      const errorMsg = Array.isArray(errorObj.detail)
+                        ? errorObj.detail.map((e: any) => e.msg).join(", ")
+                        : errorObj.detail;
+                      logger(
+                        `Parsed error from content: ${errorMsg}`,
+                        "Error",
+                        "error"
+                      );
+                      addError(formatErrorMessage(errorMsg));
+                      stopStreaming();
+                      return;
+                    }
+                  } catch {
+                    // Not a JSON error, continue normally
+                  }
+                }
+
                 accumulatedContent += data.content;
                 updateStreamingContent(streamingMessageId, data.content);
               } else if (data.type === "memory_call") {
@@ -175,6 +246,43 @@ const ChatInterface: React.FC<Props> = ({ handleNavClick }) => {
 
                 addMemoryOperation(memoryOperation);
                 pendingMemoryCall = null;
+              } else if (data.type === "tool_call") {
+                // Handle tool calls, especially transfers
+                if (data.tool) {
+                  addToolCall(streamingMessageId, data.tool, data.args || {});
+
+                  // Check if this is a transfer
+                  if (
+                    data.tool.startsWith("transfer_to_") ||
+                    data.tool.toLowerCase().includes("transfer")
+                  ) {
+                    // Extract the target agent name
+                    const targetAgent = data.tool
+                      .replace("transfer_to_", "")
+                      .replace(/_/g, " ");
+                    const currentAgentName = selectedGroup?.name || "Agent";
+
+                    addAgentTransfer(
+                      streamingMessageId,
+                      currentAgentName,
+                      targetAgent
+                    );
+
+                    logger(
+                      `Agent transfer: ${currentAgentName} -> ${targetAgent}`,
+                      "Transfer",
+                      "info"
+                    );
+                  }
+                }
+              } else if (data.type === "agent_name" && data.agent_name) {
+                // Handle agent name/switch events
+                setCurrentAgent(streamingMessageId, data.agent_name);
+                logger(
+                  `Agent switched to: ${data.agent_name}`,
+                  "Agent",
+                  "info"
+                );
               }
             } catch (e) {
               console.error("Error parsing stream data:", e);
@@ -186,6 +294,48 @@ const ChatInterface: React.FC<Props> = ({ handleNavClick }) => {
       }
 
       if (accumulatedContent) {
+        // Check if accumulated content contains error patterns
+        if (accumulatedContent.includes('{"detail":[')) {
+          try {
+            const errorObj = JSON.parse(accumulatedContent);
+            if (errorObj.detail) {
+              const errorMsg = Array.isArray(errorObj.detail)
+                ? errorObj.detail
+                    .map((e: any) => e.msg || e)
+                    .filter(Boolean)
+                    .join(", ") || "An error occurred"
+                : errorObj.detail;
+              logger(
+                `Error detected in final content: ${errorMsg}`,
+                "Error",
+                "error"
+              );
+              addError(formatErrorMessage(errorMsg));
+              stopStreaming();
+              return;
+            }
+          } catch {
+            // Not parseable JSON, check for plain error text
+          }
+        }
+
+        // Check for common error patterns in text
+        if (
+          accumulatedContent.toLowerCase().includes("error") &&
+          accumulatedContent.trim().length < 200 &&
+          (accumulatedContent.includes("connecting") ||
+            accumulatedContent.includes("failed"))
+        ) {
+          logger(
+            `Potential error in content: ${accumulatedContent}`,
+            "Error",
+            "warning"
+          );
+          addError(formatErrorMessage(accumulatedContent));
+          stopStreaming();
+          return;
+        }
+
         finishResponse(
           streamingMessageId,
           accumulatedContent,
