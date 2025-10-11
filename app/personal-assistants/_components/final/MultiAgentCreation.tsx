@@ -212,6 +212,12 @@ const formReducer = (state: FormState, action: FormAction): FormState => {
           role: agent.role,
           selectedTiers: agent.tiers,
           sub_agents: [],
+          tools: {
+            retrieve_from_long_term_memory: true,
+            update_long_term_memory: true,
+            trim_messages: false,
+            filter_messages: false,
+          },
         })
       );
 
@@ -266,6 +272,12 @@ const formReducer = (state: FormState, action: FormAction): FormState => {
             role: roleReq.role,
             selectedTiers: [],
             sub_agents: [],
+            tools: {
+              retrieve_from_long_term_memory: true,
+              update_long_term_memory: true,
+              trim_messages: false,
+              filter_messages: false,
+            },
           });
         }
       });
@@ -398,8 +410,8 @@ const AgentCard: React.FC<AgentCardProps> = ({
   });
 
   const [modalTools, setModalTools] = useState({
-    retrieve_from_long_term_memory: agent.tools?.retrieve_from_long_term_memory ?? false,
-    update_long_term_memory: agent.tools?.update_long_term_memory ?? false,
+    retrieve_from_long_term_memory: agent.tools?.retrieve_from_long_term_memory ?? true,
+    update_long_term_memory: agent.tools?.update_long_term_memory ?? true,
     trim_messages: agent.tools?.trim_messages ?? false,
     filter_messages: agent.tools?.filter_messages ?? false,
   });
