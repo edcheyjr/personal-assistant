@@ -48,7 +48,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getArchitectureConfigs, getCoordinationConfigs } from "../../_config/architectures.config";
+import {
+  getArchitectureConfigs,
+  getCoordinationConfigs,
+} from "../../_config/architectures.config";
 import { QUICK_START_TEMPLATES } from "../../_config/templates.config";
 import { getSystemPromptForArchitecture } from "../../_config/system-prompts.config";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -98,6 +101,7 @@ interface FormState {
   showArchitectureFlow: boolean;
   agents: AgentStructure[];
   coordinationSettings: any;
+  isGroupNameManuallyEdited: boolean;
 }
 
 // Action types
@@ -125,12 +129,18 @@ type FormAction =
 const formReducer = (state: FormState, action: FormAction): FormState => {
   switch (action.type) {
     case "SET_GROUP_NAME":
-      return { ...state, groupName: action.payload };
+      return {
+        ...state,
+        groupName: action.payload,
+        isGroupNameManuallyEdited: true,
+      };
 
     case "SET_ARCHITECTURE":
-      const newGroupName =
-        state.groupName ||
-        `${action.architectureConfigs[action.payload]?.label} Team`;
+      const newGroupName = state.isGroupNameManuallyEdited
+        ? state.groupName
+        : action.payload === "debate"
+        ? "Collaborative"
+        : `${action.architectureConfigs[action.payload]?.label}`;
       return {
         ...state,
         selectedArchitecture: action.payload,
@@ -227,6 +237,7 @@ const formReducer = (state: FormState, action: FormAction): FormState => {
         groupName: template.name,
         agents: templateAgents,
         showTemplates: false,
+        isGroupNameManuallyEdited: true,
       };
 
     case "AUTO_POPULATE_AGENTS":
@@ -287,7 +298,9 @@ const formReducer = (state: FormState, action: FormAction): FormState => {
 
       if (architecture === "supervisor") {
         // Coordinator delegates to all specialists
-        const coordinatorIdx = newAgents.findIndex((a) => a.role === "coordinator");
+        const coordinatorIdx = newAgents.findIndex(
+          (a) => a.role === "coordinator"
+        );
         const specialistIndices = newAgents
           .map((a, idx) => (a.role === "specialist" ? idx : -1))
           .filter((idx) => idx !== -1);
@@ -298,7 +311,9 @@ const formReducer = (state: FormState, action: FormAction): FormState => {
       } else if (architecture === "hierarchical") {
         // Senior supervisor oversees team leads
         // Team leads manage specialists (distribute evenly)
-        const supervisorIdx = newAgents.findIndex((a) => a.role === "senior_supervisor");
+        const supervisorIdx = newAgents.findIndex(
+          (a) => a.role === "senior_supervisor"
+        );
         const teamLeadIndices = newAgents
           .map((a, idx) => (a.role === "team_lead" ? idx : -1))
           .filter((idx) => idx !== -1);
@@ -321,7 +336,9 @@ const formReducer = (state: FormState, action: FormAction): FormState => {
         // Moderator oversees all advocates and critics
         const moderatorIdx = newAgents.findIndex((a) => a.role === "moderator");
         const debaterIndices = newAgents
-          .map((a, idx) => (a.role === "advocate" || a.role === "critic" ? idx : -1))
+          .map((a, idx) =>
+            a.role === "advocate" || a.role === "critic" ? idx : -1
+          )
           .filter((idx) => idx !== -1);
 
         if (moderatorIdx !== -1) {
@@ -332,12 +349,13 @@ const formReducer = (state: FormState, action: FormAction): FormState => {
 
       // Auto-populate default coordination settings for the architecture
       const coordinationConfigs = getCoordinationConfigs();
-      const defaultCoordinationSettings = coordinationConfigs[architecture]?.settings || {};
+      const defaultCoordinationSettings =
+        coordinationConfigs[architecture]?.settings || {};
 
       return {
         ...state,
         agents: newAgents,
-        coordinationSettings: defaultCoordinationSettings
+        coordinationSettings: defaultCoordinationSettings,
       };
 
     default:
@@ -354,6 +372,7 @@ const initialState: FormState = {
   showArchitectureFlow: false,
   agents: [],
   coordinationSettings: {},
+  isGroupNameManuallyEdited: false,
 };
 
 // Agent Card Component
@@ -410,7 +429,8 @@ const AgentCard: React.FC<AgentCardProps> = ({
   });
 
   const [modalTools, setModalTools] = useState({
-    retrieve_from_long_term_memory: agent.tools?.retrieve_from_long_term_memory ?? true,
+    retrieve_from_long_term_memory:
+      agent.tools?.retrieve_from_long_term_memory ?? true,
     update_long_term_memory: agent.tools?.update_long_term_memory ?? true,
     trim_messages: agent.tools?.trim_messages ?? false,
     filter_messages: agent.tools?.filter_messages ?? false,
@@ -491,7 +511,8 @@ const AgentCard: React.FC<AgentCardProps> = ({
       },
     });
     setModalTools({
-      retrieve_from_long_term_memory: agent.tools?.retrieve_from_long_term_memory ?? false,
+      retrieve_from_long_term_memory:
+        agent.tools?.retrieve_from_long_term_memory ?? false,
       update_long_term_memory: agent.tools?.update_long_term_memory ?? false,
       trim_messages: agent.tools?.trim_messages ?? false,
       filter_messages: agent.tools?.filter_messages ?? false,
@@ -810,10 +831,9 @@ const AgentCard: React.FC<AgentCardProps> = ({
                 </div>
               )}
             </div>
-          ) : agent.role === "standalone" ? (
-            // For standalone agents (None architecture), no sub-agents section needed
-            null
-          ) : (
+          ) : agent.role ===
+            "standalone" ? // For standalone agents (None architecture), no sub-agents section needed
+          null : (
             // For other agents, show the sub-agents management UI
             <>
               <div className="flex items-center justify-between mb-2">
@@ -920,10 +940,12 @@ const AgentCard: React.FC<AgentCardProps> = ({
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
         <DialogContent
           className="w-[95vw] sm:max-w-5xl max-h-[85vh] flex flex-col"
-          style={{
-            ...themeColorCss,
-            '--icon-color': themeColor,
-          } as React.CSSProperties}
+          style={
+            {
+              ...themeColorCss,
+              "--icon-color": themeColor,
+            } as React.CSSProperties
+          }
         >
           <DialogHeader>
             <DialogTitle>Edit Agent: {agent.name}</DialogTitle>
@@ -934,128 +956,143 @@ const AgentCard: React.FC<AgentCardProps> = ({
 
           <ScrollArea className="flex-1 pr-4 overflow-y-auto">
             <div className="space-y-6 py-4">
-            {/* Personality Traits Section */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <Brain className="w-5 h-5" style={{ color: 'var(--icon-color)' }} />
-                <h3 className="text-lg font-semibold">Personality Traits</h3>
+              {/* Personality Traits Section */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <Brain
+                    className="w-5 h-5"
+                    style={{ color: "var(--icon-color)" }}
+                  />
+                  <h3 className="text-lg font-semibold">Personality Traits</h3>
+                </div>
+                <SpecialSelectionInput
+                  values={modalPersonality.traits}
+                  options={availableTraits}
+                  type="text"
+                  name="personality-traits"
+                  placeholder="Select or add personality traits..."
+                  inputHelp="Choose personality traits that define this agent's behavior"
+                  onChange={(updatedTraits) => {
+                    setModalPersonality((prev) => ({
+                      ...prev,
+                      traits: updatedTraits,
+                    }));
+                  }}
+                />
               </div>
-              <SpecialSelectionInput
-                values={modalPersonality.traits}
-                options={availableTraits}
-                type="text"
-                name="personality-traits"
-                placeholder="Select or add personality traits..."
-                inputHelp="Choose personality traits that define this agent's behavior"
-                onChange={(updatedTraits) => {
-                  setModalPersonality((prev) => ({
-                    ...prev,
-                    traits: updatedTraits,
-                  }));
-                }}
-              />
-            </div>
 
-            {/* Personality Sliders Section */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Personality Values</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {(
-                  Object.keys(modalPersonality.sliders) as Array<
-                    keyof typeof modalPersonality.sliders
-                  >
-                ).map((key) => (
-                  <div key={key} className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label className="capitalize">{key}</Label>
-                      <span className="text-sm text-muted-foreground">
-                        {modalPersonality.sliders[key]}
-                      </span>
-                    </div>
-                    <Slider
-                      value={[modalPersonality.sliders[key]]}
-                      onValueChange={(value) => handleSliderChange(key, value)}
-                      min={0}
-                      max={100}
-                      step={5}
-                      className="w-full"
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Tools Section */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <Wrench className="w-5 h-5" style={{ color: 'var(--icon-color)' }} />
-                <h3 className="text-lg font-semibold">Available Tools</h3>
-              </div>
-              <div className="space-y-3 border rounded-lg p-4 bg-card">
-                {(
-                  Object.keys(modalTools) as Array<keyof typeof modalTools>
-                ).map((tool) => (
-                  <div
-                    key={tool}
-                    className="flex items-center justify-between py-2"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10"
-                      >
-                        {tool.includes("memory") ? (
-                          <Database className="w-4 h-4" style={{ color: 'var(--icon-color)' }} />
-                        ) : (
-                          <Clock className="w-4 h-4" style={{ color: 'var(--icon-color)' }} />
-                        )}
+              {/* Personality Sliders Section */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Personality Values</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {(
+                    Object.keys(modalPersonality.sliders) as Array<
+                      keyof typeof modalPersonality.sliders
+                    >
+                  ).map((key) => (
+                    <div key={key} className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label className="capitalize">{key}</Label>
+                        <span className="text-sm text-muted-foreground">
+                          {modalPersonality.sliders[key]}
+                        </span>
                       </div>
-                      <div>
-                        <Label className="font-medium cursor-pointer">
-                          {tool
-                            .split("_")
-                            .map(
-                              (word) =>
-                                word.charAt(0).toUpperCase() + word.slice(1)
-                            )
-                            .join(" ")}
-                        </Label>
-                        <p className="text-xs text-muted-foreground">
-                          {tool === "retrieve_from_long_term_memory"
-                            ? "Access stored memories and context"
-                            : tool === "update_long_term_memory"
-                            ? "Save information for future reference"
-                            : tool === "trim_messages"
-                            ? "Automatically manage conversation length"
-                            : "Remove irrelevant messages from history"}
-                        </p>
-                      </div>
+                      <Slider
+                        value={[modalPersonality.sliders[key]]}
+                        onValueChange={(value) =>
+                          handleSliderChange(key, value)
+                        }
+                        min={0}
+                        max={100}
+                        step={5}
+                        className="w-full"
+                      />
                     </div>
-                    <Switch
-                      checked={modalTools[tool]}
-                      onCheckedChange={() => handleToolToggle(tool)}
-                    />
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
 
-            {/* Knowledge Bases Section */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <BookOpen className="w-5 h-5" style={{ color: 'var(--icon-color)' }} />
-                <h3 className="text-lg font-semibold">Knowledge Bases</h3>
+              {/* Tools Section */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <Wrench
+                    className="w-5 h-5"
+                    style={{ color: "var(--icon-color)" }}
+                  />
+                  <h3 className="text-lg font-semibold">Available Tools</h3>
+                </div>
+                <div className="space-y-3 border rounded-lg p-4 bg-card">
+                  {(
+                    Object.keys(modalTools) as Array<keyof typeof modalTools>
+                  ).map((tool) => (
+                    <div
+                      key={tool}
+                      className="flex items-center justify-between py-2"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10">
+                          {tool.includes("memory") ? (
+                            <Database
+                              className="w-4 h-4"
+                              style={{ color: "var(--icon-color)" }}
+                            />
+                          ) : (
+                            <Clock
+                              className="w-4 h-4"
+                              style={{ color: "var(--icon-color)" }}
+                            />
+                          )}
+                        </div>
+                        <div>
+                          <Label className="font-medium cursor-pointer">
+                            {tool
+                              .split("_")
+                              .map(
+                                (word) =>
+                                  word.charAt(0).toUpperCase() + word.slice(1)
+                              )
+                              .join(" ")}
+                          </Label>
+                          <p className="text-xs text-muted-foreground">
+                            {tool === "retrieve_from_long_term_memory"
+                              ? "Access stored memories and context"
+                              : tool === "update_long_term_memory"
+                              ? "Save information for future reference"
+                              : tool === "trim_messages"
+                              ? "Automatically manage conversation length"
+                              : "Remove irrelevant messages from history"}
+                          </p>
+                        </div>
+                      </div>
+                      <Switch
+                        checked={modalTools[tool]}
+                        onCheckedChange={() => handleToolToggle(tool)}
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="border rounded-lg p-6 bg-muted/50 text-center">
-                <Database className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground mb-1">
-                  Knowledge Base Integration
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Coming soon! Connect custom knowledge bases to enhance agent
-                  capabilities.
-                </p>
+
+              {/* Knowledge Bases Section */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <BookOpen
+                    className="w-5 h-5"
+                    style={{ color: "var(--icon-color)" }}
+                  />
+                  <h3 className="text-lg font-semibold">Knowledge Bases</h3>
+                </div>
+                <div className="border rounded-lg p-6 bg-muted/50 text-center">
+                  <Database className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground mb-1">
+                    Knowledge Base Integration
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Coming soon! Connect custom knowledge bases to enhance agent
+                    capabilities.
+                  </p>
+                </div>
               </div>
-            </div>
             </div>
           </ScrollArea>
 
@@ -1373,7 +1410,9 @@ const MultiAgentCreation: React.FC<{
         } architecture`,
         architecture: state.selectedArchitecture,
         prompt_configurations: {
-          system_prompt: getSystemPromptForArchitecture(state.selectedArchitecture),
+          system_prompt: getSystemPromptForArchitecture(
+            state.selectedArchitecture
+          ),
         },
         advanced_coordination_settings: state.coordinationSettings || {},
       },
@@ -1409,7 +1448,11 @@ const MultiAgentCreation: React.FC<{
 
           // For hierarchical architectures (supervisor, hierarchical, debate):
           // Backend needs nested structure with sub_agents relationships
-          if (architecture === "supervisor" || architecture === "hierarchical" || architecture === "debate") {
+          if (
+            architecture === "supervisor" ||
+            architecture === "hierarchical" ||
+            architecture === "debate"
+          ) {
             const buildSubAgentConfig = (
               subAgentIndices: number[],
               visited: Set<number> = new Set()
@@ -1432,7 +1475,9 @@ const MultiAgentCreation: React.FC<{
             // Find all agents that are sub-agents of someone else
             const allSubAgentIndices = new Set<number>();
             state.agents.forEach((agent) => {
-              agent.sub_agents?.forEach((subIdx) => allSubAgentIndices.add(subIdx));
+              agent.sub_agents?.forEach((subIdx) =>
+                allSubAgentIndices.add(subIdx)
+              );
             });
 
             // Only include ROOT agents with their nested sub_agents
@@ -1640,7 +1685,7 @@ const MultiAgentCreation: React.FC<{
               onChange={(e) =>
                 dispatch({ type: "SET_GROUP_NAME", payload: e.target.value })
               }
-              placeholder="Adaptive/Hybrid Team"
+              placeholder="Select architecture to prefill agent group name or enter a new name"
               className="mt-1"
             />
           </div>
