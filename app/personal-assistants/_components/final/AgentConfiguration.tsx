@@ -583,75 +583,45 @@ const AgentConfiguration: React.FC<{ selectedGroupId?: string | null; onDeleteGr
                   <div>
                     <Label className="mb-4 block">Personality Sliders</Label>
                     <div className="space-y-6">
-                      <div>
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm">Creativity</span>
-                          <span className="text-sm font-semibold">{state.creativitySlider}%</span>
-                        </div>
-                        <SliderComponent
-                          selectedColor={themeColor}
-                          label=""
-                          value={state.creativitySlider}
-                          onChange={(value) => dispatch({ type: 'SET_CREATIVITY_SLIDER', payload: value })}
-                          percentage={state.creativitySlider}
-                        />
-                      </div>
+                      <SliderComponent
+                        selectedColor={themeColor}
+                        label="Creativity"
+                        value={state.creativitySlider}
+                        onChange={(value) => dispatch({ type: 'SET_CREATIVITY_SLIDER', payload: value })}
+                        percentage={state.creativitySlider}
+                      />
 
-                      <div>
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm">Formality</span>
-                          <span className="text-sm font-semibold">{state.formalitySlider}%</span>
-                        </div>
-                        <SliderComponent
-                          selectedColor={themeColor}
-                          label=""
-                          value={state.formalitySlider}
-                          onChange={(value) => dispatch({ type: 'SET_FORMALITY_SLIDER', payload: value })}
-                          percentage={state.formalitySlider}
-                        />
-                      </div>
+                      <SliderComponent
+                        selectedColor={themeColor}
+                        label="Formality"
+                        value={state.formalitySlider}
+                        onChange={(value) => dispatch({ type: 'SET_FORMALITY_SLIDER', payload: value })}
+                        percentage={state.formalitySlider}
+                      />
 
-                      <div>
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm">Verbosity</span>
-                          <span className="text-sm font-semibold">{state.verbositySlider}%</span>
-                        </div>
-                        <SliderComponent
-                          selectedColor={themeColor}
-                          label=""
-                          value={state.verbositySlider}
-                          onChange={(value) => dispatch({ type: 'SET_VERBOSITY_SLIDER', payload: value })}
-                          percentage={state.verbositySlider}
-                        />
-                      </div>
+                      <SliderComponent
+                        selectedColor={themeColor}
+                        label="Verbosity"
+                        value={state.verbositySlider}
+                        onChange={(value) => dispatch({ type: 'SET_VERBOSITY_SLIDER', payload: value })}
+                        percentage={state.verbositySlider}
+                      />
 
-                      <div>
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm">Enthusiasm</span>
-                          <span className="text-sm font-semibold">{state.enthusiasmSlider}%</span>
-                        </div>
-                        <SliderComponent
-                          selectedColor={themeColor}
-                          label=""
-                          value={state.enthusiasmSlider}
-                          onChange={(value) => dispatch({ type: 'SET_ENTHUSIASM_SLIDER', payload: value })}
-                          percentage={state.enthusiasmSlider}
-                        />
-                      </div>
+                      <SliderComponent
+                        selectedColor={themeColor}
+                        label="Enthusiasm"
+                        value={state.enthusiasmSlider}
+                        onChange={(value) => dispatch({ type: 'SET_ENTHUSIASM_SLIDER', payload: value })}
+                        percentage={state.enthusiasmSlider}
+                      />
 
-                      <div>
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm">Empathy</span>
-                          <span className="text-sm font-semibold">{state.empathySlider}%</span>
-                        </div>
-                        <SliderComponent
-                          selectedColor={themeColor}
-                          label=""
-                          value={state.empathySlider}
-                          onChange={(value) => dispatch({ type: 'SET_EMPATHY_SLIDER', payload: value })}
-                          percentage={state.empathySlider}
-                        />
-                      </div>
+                      <SliderComponent
+                        selectedColor={themeColor}
+                        label="Empathy"
+                        value={state.empathySlider}
+                        onChange={(value) => dispatch({ type: 'SET_EMPATHY_SLIDER', payload: value })}
+                        percentage={state.empathySlider}
+                      />
                     </div>
                   </div>
                 </div>
